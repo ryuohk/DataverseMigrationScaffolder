@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <UseWindowsForms>true</UseWindowsForms>
+    <LangVersion>7.3</LangVersion>
+    <RootNamespace>DataverseMigrationScaffolder</RootNamespace>
+    <AssemblyName>DataverseMigrationScaffolder</AssemblyName>
+    <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <Version>1.2026.7.1</Version>
+    <Description>XrmToolBox tool that generates staging and GUID mapping table DDL from Dataverse metadata.</Description>
+    <Authors>Ryu Ohkawa</Authors>
+    <Company>Ryu Ohkawa</Company>
+    <Copyright>Copyright © Ryu Ohkawa 2026</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Brings in XrmToolBox.Extensibility, McTools.Xrm.Connection and the Dataverse SDK assemblies -->
+    <PackageReference Include="XrmToolBoxPackage" Version="1.*" />
+    <!-- Explicit reference so NuGet floats this transitive dependency up to the version
+         XrmToolBox.Extensibility was actually compiled against (NuGet otherwise picks the
+         lowest version satisfying the range, causing an MSB3277 conflict). -->
+    <PackageReference Include="MscrmTools.Xrm.Connection" Version="1.*" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="System.ComponentModel.Composition" />
+    <Reference Include="System.IO.Compression" />
+  </ItemGroup>
+
+</Project>

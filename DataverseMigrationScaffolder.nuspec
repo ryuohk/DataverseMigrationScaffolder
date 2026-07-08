@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
+  <metadata>
+    <id>DataverseMigrationScaffolder</id>
+    <version>1.2026.7.1</version>
+    <title>Dataverse Migration Scaffolder</title>
+    <authors>Ryu Ohkawa</authors>
+    <owners>Ryu Ohkawa</owners>
+    <projectUrl>https://github.com/ryuohk/DataverseMigrationScaffolder</projectUrl>
+    <iconUrl>https://raw.githubusercontent.com/ryuohk/DataverseMigrationScaffolder/main/images/logo.png</iconUrl>
+    <license type="expression">MIT</license>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>XrmToolBox tool that scaffolds a SQL data-migration harness from Dataverse metadata: staging table and GUID mapping table DDL scripts batched strictly by dependency tier, plus truncate/teardown scripts, match-key indexes, a styled Excel data dictionary, and a Mermaid dependency diagram. Filters tables and columns by solution, remembers selections per environment, and is fully configurable (prefixes, match-key suffixes, dependency-ranking exclusions).</description>
+    <summary>Scaffold SQL staging and GUID mapping tables from Dataverse metadata, batched by dependency tier - plus data dictionary, dependency diagram, and harness reset/teardown scripts.</summary>
+    <releaseNotes>
+1.2026.7.1: Initial release.
+- Staging and GUID mapping table DDL from Dataverse metadata (drop-and-recreate or create-if-missing)
+- Strict one-dependency-tier-per-file batching for SSIS package sequencing; cycles broken by edge-dropping with deferred-update warnings
+- Solution-based table and column filtering; per-environment remembered selections
+- Configurable table prefixes and match-key suffixes; dependency-ranking exclusions
+- Extra outputs: truncate script, teardown script, styled Excel data dictionary, Mermaid dependency diagram
+- Guarded match-key indexes; session metadata cache; cancelable generation
+    </releaseNotes>
+    <copyright>Copyright © Ryu Ohkawa 2026</copyright>
+    <tags>XrmToolBox Plugins Dataverse Migration SQL Staging DDL Scaffolder DataDictionary</tags>
+    <dependencies>
+      <dependency id="XrmToolBox" version="1.2025.10.74" />
+    </dependencies>
+  </metadata>
+  <files>
+    <!-- Only this tool's assembly - no SDK or XrmToolBox assemblies (Tool Library rule) -->
+    <file src="DataverseMigrationScaffolder\bin\Release\DataverseMigrationScaffolder.dll" target="lib\net48\Plugins" />
+  </files>
+</package>
