@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
     <id>DataverseMigrationScaffolder</id>
-    <version>1.2026.7.4</version>
+    <version>1.2026.7.5</version>
     <title>Dataverse Migration Scaffolder</title>
     <authors>Ryu Ohkawa</authors>
     <owners>Ryu Ohkawa</owners>
@@ -13,6 +13,8 @@
     <description>XrmToolBox tool that scaffolds a SQL data-migration harness from Dataverse metadata: staging table and GUID mapping table DDL scripts batched strictly by dependency tier, plus truncate/teardown scripts, match-key indexes, a styled Excel data dictionary, and a Mermaid dependency diagram. Filters tables and columns by solution, remembers selections per environment, and is fully configurable (prefixes, match-key suffixes, dependency-ranking exclusions).</description>
     <summary>Scaffold SQL staging and GUID mapping tables from Dataverse metadata, batched by dependency tier - plus data dictionary, dependency diagram, and harness reset/teardown scripts.</summary>
     <releaseNotes>
+1.2026.7.5: "Include managed" toggle next to the Solution picker (managed solutions labeled; patches always excluded).
+
 1.2026.7.4: Fix update loop - 1.2026.7.3 was packaged with a mismatched assembly version. Do not install 1.2026.7.3.
 
 1.2026.7.3: Feedback round.

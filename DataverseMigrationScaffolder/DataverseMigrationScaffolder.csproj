@@ -8,7 +8,7 @@
     <AssemblyName>DataverseMigrationScaffolder</AssemblyName>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <Version>1.2026.7.4</Version>
+    <Version>1.2026.7.5</Version>
     <Description>XrmToolBox tool that generates staging and GUID mapping table DDL from Dataverse metadata.</Description>
     <Authors>Ryu Ohkawa</Authors>
     <Company>Ryu Ohkawa</Company>

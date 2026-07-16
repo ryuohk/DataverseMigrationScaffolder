@@ -49,17 +49,20 @@ namespace DataverseMigrationScaffolder.Core
         }
 
         /// <summary>
-        /// Visible UNMANAGED solutions (patches excluded), "Default" first, the rest alphabetical.
-        /// Managed solutions and patches are noise for script generation purposes.
+        /// Visible solutions (patches always excluded), "Default" first, the rest alphabetical.
+        /// Managed solutions are included only when requested.
         /// </summary>
-        public List<SolutionInfo> GetSolutions()
+        public List<SolutionInfo> GetSolutions(bool includeManaged)
         {
             var query = new QueryExpression("solution")
             {
-                ColumnSet = new ColumnSet("uniquename", "friendlyname", "solutionid")
+                ColumnSet = new ColumnSet("uniquename", "friendlyname", "solutionid", "ismanaged")
             };
             query.Criteria.AddCondition("isvisible", ConditionOperator.Equal, true);
-            query.Criteria.AddCondition("ismanaged", ConditionOperator.Equal, false);
+            if (!includeManaged)
+            {
+                query.Criteria.AddCondition("ismanaged", ConditionOperator.Equal, false);
+            }
             query.Criteria.AddCondition("parentsolutionid", ConditionOperator.Null);   // excludes patches
 
             var result = _service.RetrieveMultiple(query);
@@ -68,7 +71,8 @@ namespace DataverseMigrationScaffolder.Core
                 {
                     Id = e.Id,
                     UniqueName = e.GetAttributeValue<string>("uniquename") ?? "",
-                    FriendlyName = e.GetAttributeValue<string>("friendlyname") ?? ""
+                    FriendlyName = e.GetAttributeValue<string>("friendlyname") ?? "",
+                    IsManaged = e.GetAttributeValue<bool>("ismanaged")
                 })
                 .OrderBy(s => string.Equals(s.UniqueName, "Default", StringComparison.OrdinalIgnoreCase) ? 0 : 1)
                 .ThenBy(s => s.FriendlyName, StringComparer.OrdinalIgnoreCase)
