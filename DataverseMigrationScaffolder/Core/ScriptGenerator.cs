@@ -157,6 +157,7 @@ namespace DataverseMigrationScaffolder.Core
             foreach (var table in chunk.Tables)
             {
                 EmitStagingTable(sb, table);
+                sb.AppendLine();
             }
 
             return sb.ToString();
@@ -186,11 +187,9 @@ namespace DataverseMigrationScaffolder.Core
             if (_settings.StagingDropRecreate)
             {
                 sb.AppendLine(string.Format("DROP TABLE IF EXISTS {0};", fullName));
-                sb.AppendLine("GO");
                 sb.AppendLine(string.Format("CREATE TABLE {0}(", fullName));
                 AppendColumnLines(sb, lines, "");
-                sb.AppendLine(") ON [PRIMARY];");
-                sb.AppendLine("GO");
+                sb.AppendLine(");");
             }
             else
             {
@@ -198,9 +197,8 @@ namespace DataverseMigrationScaffolder.Core
                 sb.AppendLine("BEGIN");
                 sb.AppendLine(string.Format("    CREATE TABLE {0}(", fullName));
                 AppendColumnLines(sb, lines, "    ");
-                sb.AppendLine("    ) ON [PRIMARY];");
+                sb.AppendLine("    );");
                 sb.AppendLine("END");
-                sb.AppendLine("GO");
             }
 
             if (_settings.IndexLegacyIdColumns)
@@ -240,14 +238,13 @@ namespace DataverseMigrationScaffolder.Core
         {
             var sb = new StringBuilder();
             sb.Append(Header("GUID mapping", chunk, fileNumber, totalFiles, warnings));
-            sb.AppendLine("GO");
             sb.AppendLine("SET ANSI_NULLS ON;");
             sb.AppendLine("SET QUOTED_IDENTIFIER ON;");
-            sb.AppendLine("GO");
 
             foreach (var table in chunk.Tables)
             {
                 EmitGuidTable(sb, table);
+                sb.AppendLine();
             }
 
             return sb.ToString();
@@ -291,11 +288,9 @@ namespace DataverseMigrationScaffolder.Core
             if (_settings.GuidDropRecreate)
             {
                 sb.AppendLine(string.Format("DROP TABLE IF EXISTS {0};", fullName));
-                sb.AppendLine("GO");
                 sb.AppendLine(string.Format("CREATE TABLE {0}(", fullName));
                 sb.AppendLine(string.Join("," + Environment.NewLine, lines));
                 sb.AppendLine(");");
-                sb.AppendLine("GO");
             }
             else
             {
@@ -305,7 +300,6 @@ namespace DataverseMigrationScaffolder.Core
                 sb.AppendLine(string.Join("," + Environment.NewLine, lines));
                 sb.AppendLine("    );");
                 sb.AppendLine("END");
-                sb.AppendLine("GO");
             }
 
             if (_settings.IndexLegacyIdColumns)
@@ -325,7 +319,6 @@ namespace DataverseMigrationScaffolder.Core
                     "IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE [name] = N'{0}' AND [object_id] = OBJECT_ID(N'{1}'))",
                     indexName, fullName));
                 sb.AppendLine(string.Format("    CREATE NONCLUSTERED INDEX [{0}] ON {1}([{2}]);", indexName, fullName, col.Name));
-                sb.AppendLine("GO");
             }
         }
 
@@ -351,7 +344,6 @@ namespace DataverseMigrationScaffolder.Core
             {
                 sb.AppendLine(string.Format("DROP TABLE IF EXISTS [{0}].[{1}{2}];", _settings.SchemaName, _settings.StagingPrefix, table.SchemaName));
             }
-            sb.AppendLine("GO");
             sb.AppendLine();
             sb.AppendLine("-- GUID mapping tables (uncomment to drop accumulated mappings)");
             foreach (var table in ordered)
@@ -391,7 +383,6 @@ namespace DataverseMigrationScaffolder.Core
             {
                 sb.AppendLine(string.Format("TRUNCATE TABLE [{0}].[{1}{2}];", _settings.SchemaName, _settings.StagingPrefix, table.SchemaName));
             }
-            sb.AppendLine("GO");
             sb.AppendLine();
             sb.AppendLine("-- GUID mapping tables (uncomment to empty accumulated mappings)");
             foreach (var table in ordered)

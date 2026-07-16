@@ -43,6 +43,7 @@ namespace DataverseMigrationScaffolder
         // UI
         private ToolStrip _toolStrip;
         private ToolStripComboBox _cboSolution;
+        private ToolStripLabel _lblOutputFolder;
         private TextBox _txtFilter;
         private ComboBox _cboCategory;
         private CheckBox _chkCheckedOnly;
@@ -97,7 +98,7 @@ namespace DataverseMigrationScaffolder
             // ---- Row 1: actions ----------------------------------------------------
             _toolStrip = new ToolStrip { GripStyle = ToolStripGripStyle.Hidden };
 
-            var tsbLoadTables = new ToolStripButton("Load Tables") { DisplayStyle = ToolStripItemDisplayStyle.Text };
+            var tsbLoadTables = new ToolStripButton("Load Tables") { DisplayStyle = ToolStripItemDisplayStyle.Text, ToolTipText = "Retrieve the table and solution lists from the connected environment (also clears the session metadata cache)" };
             tsbLoadTables.Click += (s, e) => ExecuteMethod(LoadTables);
 
             _cboSolution = new ToolStripComboBox
@@ -111,8 +112,10 @@ namespace DataverseMigrationScaffolder
             var tsbExclusions = new ToolStripButton("Dependency Exclusions") { DisplayStyle = ToolStripItemDisplayStyle.Text, AutoSize = true, ToolTipText = "Field names whose lookups are ignored when ranking tables by dependency" };
             tsbExclusions.Click += (s, e) => EditDependencyExclusions();
 
-            var tsbOutputFolder = new ToolStripButton("Set Output Folder") { DisplayStyle = ToolStripItemDisplayStyle.Text, AutoSize = true };
+            var tsbOutputFolder = new ToolStripButton("Set Output Folder") { DisplayStyle = ToolStripItemDisplayStyle.Text, AutoSize = true, ToolTipText = "Choose where generated files are written - without an output folder, generation is preview-only" };
             tsbOutputFolder.Click += (s, e) => PickOutputFolder();
+
+            _lblOutputFolder = new ToolStripLabel("(no output folder - preview only)") { ForeColor = Color.DimGray };
 
             _toolStrip.Items.AddRange(new ToolStripItem[]
             {
@@ -122,7 +125,7 @@ namespace DataverseMigrationScaffolder
                 new ToolStripSeparator(),
                 tsbExclusions,
                 new ToolStripSeparator(),
-                tsbOutputFolder
+                tsbOutputFolder, _lblOutputFolder
             });
 
             // ---- Row 2: filters + options + generate -------------------------------
@@ -218,6 +221,20 @@ namespace DataverseMigrationScaffolder
             tip.SetToolTip(_chkManifest, "data_dictionary.xlsx - one sheet per table, ordered by display name, plus an index sheet");
             tip.SetToolTip(_chkMermaid, "diagram.mmd - Mermaid flowchart of lookup dependencies grouped by tier (render at mermaid.live)");
 
+            // ---- General guidance tooltips ------------------------------------------
+            tip.AutoPopDelay = 15000;   // some of these take more than 5 seconds to read
+            tip.SetToolTip(_txtFilter, "Filter the table grid by logical or display name");
+            tip.SetToolTip(_cboCategory, "Filter by publisher prefix parsed from the logical name (\"oob\" = no prefix / out-of-box)");
+            tip.SetToolTip(_chkCheckedOnly, "Show only the tables currently checked for generation");
+            tip.SetToolTip(_txtSchema, "SQL schema for the generated tables (default: dbo)");
+            tip.SetToolTip(_numBatch, "Maximum tables per .sql file. Files never mix dependency tiers - a tier larger than this splits into parts, a smaller tier gets its own shorter file");
+            tip.SetToolTip(_btnGenerate, "Retrieve metadata for every checked table, rank tables by lookup dependency, and produce the selected outputs");
+            tip.SetToolTip(_chkStaging, "Generate NN_create_staging.sql files: one column per Dataverse attribute, one dependency tier per file");
+            tip.SetToolTip(_cboStagingMode, "Drop & recreate = DROP IF EXISTS + CREATE (rebuild at will). Create if missing = existing tables are left untouched");
+            tip.SetToolTip(_chkGuid, "Generate NN_create_guid.sql files: id, primary name, match-key and lookup columns - for resolving legacy keys to Dataverse ids during the load");
+            tip.SetToolTip(_cboGuidMode, "Create if missing (default) protects id mappings accumulated across migration runs; Drop & recreate rebuilds them from scratch");
+            tip.SetToolTip(_chkIndexes, "Add a guarded nonclustered index on every match-key column - speeds up the resolution joins during data loads");
+
             pnlOutput.Controls.Add(grpTables);
             pnlOutput.Controls.Add(grpExtras);
 
@@ -262,6 +279,7 @@ namespace DataverseMigrationScaffolder
             // ---- Right side: files + preview + warnings ----------------------------
             _lstFiles = new ListBox { Dock = DockStyle.Fill };
             _lstFiles.SelectedIndexChanged += (s, e) => ShowSelectedFile();
+            tip.SetToolTip(_lstFiles, "Files produced by the last generation - select one to preview it below");
 
             _txtPreview = new TextBox
             {
@@ -270,7 +288,8 @@ namespace DataverseMigrationScaffolder
                 ReadOnly = true,
                 ScrollBars = ScrollBars.Both,
                 WordWrap = false,
-                Font = new Font(FontFamily.GenericMonospace, 9f)
+                Font = new Font(FontFamily.GenericMonospace, 9f),
+                Text = QuickStartText()
             };
 
             _txtWarnings = new TextBox
@@ -280,7 +299,9 @@ namespace DataverseMigrationScaffolder
                 ReadOnly = true,
                 ScrollBars = ScrollBars.Vertical,
                 Height = 80,
-                ForeColor = Color.DarkRed
+                ForeColor = Color.DimGray,
+                Text = "Warnings appear here after generation - e.g. dependency cycles that were broken " +
+                       "(those lookups need a deferred UPDATE pass after the initial load)."
             };
 
             var rightSplit = new SplitContainer
@@ -288,7 +309,9 @@ namespace DataverseMigrationScaffolder
                 Dock = DockStyle.Fill,
                 Orientation = Orientation.Horizontal
             };
+            var lblFiles = new Label { Dock = DockStyle.Top, Height = 18, Text = "Generated files (select to preview):" };
             rightSplit.Panel1.Controls.Add(_lstFiles);
+            rightSplit.Panel1.Controls.Add(lblFiles);
             rightSplit.Panel2.Controls.Add(_txtPreview);
             rightSplit.Panel2.Controls.Add(_txtWarnings);
 
@@ -326,6 +349,32 @@ namespace DataverseMigrationScaffolder
                 }
                 catch (InvalidOperationException) { /* tiny host window; keep defaults */ }
             };
+        }
+
+        private static string QuickStartText()
+        {
+            return string.Join(Environment.NewLine, new[]
+            {
+                "DATAVERSE MIGRATION SCAFFOLDER - QUICK START",
+                "",
+                "  1. Connect to an environment (top-left of XrmToolBox).",
+                "  2. Click Load Tables to retrieve tables and solutions.",
+                "  3. Pick a Solution to scope tables AND columns to its components",
+                "     (Default = everything; choice is remembered per environment).",
+                "  4. Check the tables to include. The header checkbox toggles every",
+                "     row shown by the current filter. Selections are remembered.",
+                "  5. Choose outputs below: staging / GUID mapping DDL (with editable",
+                "     prefixes and existence handling), plus optional truncate and",
+                "     teardown scripts, Excel data dictionary and Mermaid diagram.",
+                "  6. Set an output folder and click Generate Scripts.",
+                "",
+                "  Files are batched strictly by dependency tier: everything in a file",
+                "  depends only on tables from the same or earlier files - matching",
+                "  SSIS/ETL packages organized by load order.",
+                "",
+                "  Hover any control for details. Full documentation: Help menu or the",
+                "  project website (GitHub)."
+            });
         }
 
         private static ComboBox NewModeCombo(Point location)
@@ -548,9 +597,19 @@ namespace DataverseMigrationScaffolder
 
         private void UpdateOutputFolderLabel()
         {
-            _sslOutput.Text = string.IsNullOrEmpty(_settings.OutputFolder)
-                ? "(no output folder - preview only)"
-                : _settings.OutputFolder;
+            var hasFolder = !string.IsNullOrEmpty(_settings.OutputFolder);
+            var text = hasFolder ? _settings.OutputFolder : "(no output folder - preview only)";
+
+            _sslOutput.Text = text;
+            _lblOutputFolder.Text = hasFolder ? "Output: " + Shorten(text, 60) : text;
+            _lblOutputFolder.ToolTipText = text;
+            _lblOutputFolder.ForeColor = hasFolder ? Color.Black : Color.DimGray;
+        }
+
+        private static string Shorten(string path, int max)
+        {
+            if (path.Length <= max) return path;
+            return path.Substring(0, 18) + "..." + path.Substring(path.Length - (max - 21));
         }
 
         private void PickOutputFolder()
@@ -858,9 +917,16 @@ namespace DataverseMigrationScaffolder
                     : string.Format("{0}   [{1}]", file.FileName, file.Description));
             }
 
-            _txtWarnings.Text = result.Warnings.Count == 0
-                ? ""
-                : "Warnings:" + Environment.NewLine + string.Join(Environment.NewLine, result.Warnings);
+            if (result.Warnings.Count == 0)
+            {
+                _txtWarnings.ForeColor = Color.DimGray;
+                _txtWarnings.Text = "No warnings - no dependency cycles were broken.";
+            }
+            else
+            {
+                _txtWarnings.ForeColor = Color.DarkRed;
+                _txtWarnings.Text = "Warnings:" + Environment.NewLine + string.Join(Environment.NewLine, result.Warnings);
+            }
 
             if (_lstFiles.Items.Count > 0) _lstFiles.SelectedIndex = 0;
 

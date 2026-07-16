@@ -48,7 +48,10 @@ namespace DataverseMigrationScaffolder.Core
             return response.EntityMetadata;
         }
 
-        /// <summary>Visible solutions, "Default" first, the rest alphabetical.</summary>
+        /// <summary>
+        /// Visible UNMANAGED solutions (patches excluded), "Default" first, the rest alphabetical.
+        /// Managed solutions and patches are noise for script generation purposes.
+        /// </summary>
         public List<SolutionInfo> GetSolutions()
         {
             var query = new QueryExpression("solution")
@@ -56,6 +59,8 @@ namespace DataverseMigrationScaffolder.Core
                 ColumnSet = new ColumnSet("uniquename", "friendlyname", "solutionid")
             };
             query.Criteria.AddCondition("isvisible", ConditionOperator.Equal, true);
+            query.Criteria.AddCondition("ismanaged", ConditionOperator.Equal, false);
+            query.Criteria.AddCondition("parentsolutionid", ConditionOperator.Null);   // excludes patches
 
             var result = _service.RetrieveMultiple(query);
             return result.Entities

@@ -26,7 +26,7 @@ namespace DataverseMigrationScaffolder
                 Dock = DockStyle.Top,
                 Height = 50,
                 Text = "Field logical names to EXCLUDE from dependency ranking on all tables, " +
-                       "one per line (e.g. ownerid, jnc_legacycreatedby). The columns are still " +
+                       "one per line (e.g. ownerid, createdby). The columns are still " +
                        "generated; their lookups just don't influence tier ordering."
             };
 
