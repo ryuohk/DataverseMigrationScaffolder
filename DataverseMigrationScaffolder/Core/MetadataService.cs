@@ -49,20 +49,16 @@ namespace DataverseMigrationScaffolder.Core
         }
 
         /// <summary>
-        /// Visible solutions (patches always excluded), "Default" first, the rest alphabetical.
-        /// Managed solutions are included only when requested.
+        /// Visible solutions, managed and unmanaged (labeled by SolutionInfo.ToString),
+        /// patches always excluded. "Default" first, the rest alphabetical.
         /// </summary>
-        public List<SolutionInfo> GetSolutions(bool includeManaged)
+        public List<SolutionInfo> GetSolutions()
         {
             var query = new QueryExpression("solution")
             {
                 ColumnSet = new ColumnSet("uniquename", "friendlyname", "solutionid", "ismanaged")
             };
             query.Criteria.AddCondition("isvisible", ConditionOperator.Equal, true);
-            if (!includeManaged)
-            {
-                query.Criteria.AddCondition("ismanaged", ConditionOperator.Equal, false);
-            }
             query.Criteria.AddCondition("parentsolutionid", ConditionOperator.Null);   // excludes patches
 
             var result = _service.RetrieveMultiple(query);

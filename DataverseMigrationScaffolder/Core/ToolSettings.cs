@@ -86,9 +86,6 @@ namespace DataverseMigrationScaffolder.Core
         /// <summary>Emit diagram.mmd: Mermaid flowchart of lookup dependencies grouped by tier.</summary>
         public bool GenerateMermaid { get; set; } = false;
 
-        /// <summary>Show managed solutions in the solution picker (patches are always excluded).</summary>
-        public bool IncludeManagedSolutions { get; set; } = false;
-
         /// <summary>
         /// Field logical names excluded from dependency ranking on ALL tables
         /// (comma/newline separated). The columns are still emitted; their lookup

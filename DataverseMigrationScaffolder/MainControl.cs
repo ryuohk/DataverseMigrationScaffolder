@@ -43,7 +43,6 @@ namespace DataverseMigrationScaffolder
         // UI
         private ToolStrip _toolStrip;
         private ToolStripComboBox _cboSolution;
-        private ToolStripButton _tsbIncludeManaged;
         private ToolStripLabel _lblOutputFolder;
         private TextBox _txtFilter;
         private ComboBox _cboCategory;
@@ -110,18 +109,6 @@ namespace DataverseMigrationScaffolder
             };
             _cboSolution.SelectedIndexChanged += (s, e) => OnSolutionSelectionChanged();
 
-            _tsbIncludeManaged = new ToolStripButton("Include managed")
-            {
-                DisplayStyle = ToolStripItemDisplayStyle.Text,
-                CheckOnClick = true,
-                ToolTipText = "Also list managed solutions in the Solution picker (patches are always excluded)"
-            };
-            _tsbIncludeManaged.CheckedChanged += (s, e) =>
-            {
-                _settings.IncludeManagedSolutions = _tsbIncludeManaged.Checked;
-                if (_allTables.Count > 0) ExecuteMethod(ReloadSolutions);
-            };
-
             var tsbExclusions = new ToolStripButton("Dependency Exclusions") { DisplayStyle = ToolStripItemDisplayStyle.Text, AutoSize = true, ToolTipText = "Field names whose lookups are ignored when ranking tables by dependency" };
             tsbExclusions.Click += (s, e) => EditDependencyExclusions();
 
@@ -134,7 +121,7 @@ namespace DataverseMigrationScaffolder
             {
                 tsbLoadTables,
                 new ToolStripSeparator(),
-                new ToolStripLabel("Solution:"), _cboSolution, _tsbIncludeManaged,
+                new ToolStripLabel("Solution:"), _cboSolution,
                 new ToolStripSeparator(),
                 tsbExclusions,
                 new ToolStripSeparator(),
@@ -573,7 +560,6 @@ namespace DataverseMigrationScaffolder
             _chkTeardown.Checked = _settings.GenerateTeardown;
             _chkManifest.Checked = _settings.GenerateDataDictionary;
             _chkMermaid.Checked = _settings.GenerateMermaid;
-            _tsbIncludeManaged.Checked = _settings.IncludeManagedSolutions;
 
             UpdateOutputFolderLabel();
         }
@@ -666,7 +652,7 @@ namespace DataverseMigrationScaffolder
                 {
                     var service = new MetadataService(Service);
                     var tables = service.GetAllTables();
-                    var solutions = service.GetSolutions(_settings.IncludeManagedSolutions);
+                    var solutions = service.GetSolutions();
                     args.Result = Tuple.Create(tables, solutions);
                 },
                 PostWorkCallBack = args =>
@@ -687,38 +673,23 @@ namespace DataverseMigrationScaffolder
             });
         }
 
-        /// <summary>Re-queries only the solution list (e.g. after toggling "Include managed").</summary>
-        private void ReloadSolutions()
-        {
-            var includeManaged = _settings.IncludeManagedSolutions;
-            WorkAsync(new WorkAsyncInfo
-            {
-                Message = "Reloading solutions...",
-                Work = (worker, args) =>
-                {
-                    var service = new MetadataService(Service);
-                    args.Result = service.GetSolutions(includeManaged);
-                },
-                PostWorkCallBack = args =>
-                {
-                    if (args.Error != null)
-                    {
-                        MessageBox.Show(this, args.Error.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
-                    }
-                    _solutions = (List<SolutionInfo>)args.Result;
-                    PopulateSolutionPicker();
-                    ApplySolutionSelection();
-                }
-            });
-        }
-
         /// <summary>Fills the solution dropdown, restoring the remembered choice (default: Default).</summary>
         private void PopulateSolutionPicker()
         {
             _suppressSolutionEvent = true;
             _cboSolution.Items.Clear();
             foreach (var solution in _solutions) _cboSolution.Items.Add(solution);
+
+            // The dropdown defaults to the control's width and truncates long names -
+            // widen it to fit the longest entry.
+            var dropDownWidth = _cboSolution.Width;
+            foreach (var solution in _solutions)
+            {
+                var w = TextRenderer.MeasureText(solution.ToString(), _cboSolution.Font).Width
+                        + SystemInformation.VerticalScrollBarWidth;
+                if (w > dropDownWidth) dropDownWidth = w;
+            }
+            _cboSolution.ComboBox.DropDownWidth = dropDownWidth;
 
             var remembered = _settings.GetSolution(CurrentOrgKey);
             var index = 0;
