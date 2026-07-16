@@ -41,8 +41,11 @@ Scheme: `1.<year>.<month>.<build>` (e.g. 1.2026.7.1).
 
 ### 2. Build
 
-Visual Studio → Release → Rebuild Solution. Confirm
-`DataverseMigrationScaffolder\bin\Release\DataverseMigrationScaffolder.dll` is fresh.
+Visual Studio → Release → Rebuild Solution. Then **verify the version before packing**:
+right-click `DataverseMigrationScaffolder\bin\Release\DataverseMigrationScaffolder.dll` →
+Properties → Details → File version must equal the nuspec version. A mismatch causes an
+infinite "update available" loop for every user (this happened with 1.2026.7.3 - the pack ran
+against a stale build).
 
 ### 3. Pack
 
