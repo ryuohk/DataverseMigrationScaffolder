@@ -59,13 +59,64 @@ and a post-build event to copy the DLL into the plugins folder.
    commented out), **Data dictionary** (`data_dictionary.xlsx`: one sheet per table ordered
    by display name — entity info block plus per-column logical name, display name, type, lookup
    targets, description, and SQL type — with a `~Tables` index sheet showing tier, file number,
-   and cycle-dropped dependencies), and **Mermaid diagram** (`diagram.mmd`: flowchart of lookup
+   and cycle-dropped dependencies), **Mermaid diagram** (`diagram.mmd`: flowchart of lookup
    dependencies with one subgraph per tier, dashed arrows for cycle-dropped edges; render at
-   mermaid.live or paste into GitHub/Azure DevOps markdown).
+   mermaid.live or paste into GitHub/Azure DevOps markdown), and **Manifest JSON**
+   (`manifest.json`, on by default — see below).
 5. **Generate Scripts** — retrieves attribute metadata per checked table, sorts by dependency,
    writes `01_create_staging.sql`, `02_create_staging.sql`, …, `01_create_guid.sql`, … and shows a
    preview per file. Circular dependencies are broken automatically and noted in the file header
    comment and warnings panel. The checked selection is saved with each successful run.
+
+## manifest.json
+
+A machine-readable description of the run, written alongside the .sql files so an ETL pipeline
+can consume the scaffolding instead of parsing SQL. Top-level keys:
+
+| Key | Contents |
+|---|---|
+| `generator` | tool name, assembly version, ISO-8601 timestamp |
+| `options` | schema, prefixes, match-key suffixes, batch size, per-kind existence mode, dependency-ranking exclusions |
+| `files` | every emitted .sql file: name, kind (`staging` / `guid`), tier, part, and the tables it contains |
+| `tables` | per table: logical/schema/display name, `tier`, `fileNumber`, `stagingFile` / `guidFile`, fully-qualified `stagingTable` / `guidTable`, primary id and name attributes, `matchKeys`, in-scope `dependencies`, `externalDependencies`, `droppedDependencies`, `isCycleMember`, and `columns` |
+| `columns` (per table) | `name`, `sqlType`, `dataverseType`, flags (`isPrimaryId`, `isPrimaryName`, `isMatchKey`, `isLookup`, `isPolymorphic`, `isCustom`), `targets` and `targetsInScope` for lookups, and `requiresDeferredUpdate` |
+| `cycles` | each table whose dependency edges were dropped, with the dropped targets |
+| `warnings` | the same warnings shown in the UI |
+
+Typical uses: sequence SSIS/ETL packages by `tier`, generate deferred-lookup UPDATE passes from
+the columns flagged `requiresDeferredUpdate`, or diff manifests between runs to detect schema
+drift. File names in the manifest are produced by the same helpers that name the actual files,
+so they can never drift apart.
+
+```json
+{
+  "manifestVersion": 1,
+  "tables": [
+    {
+      "logicalName": "jn_case",
+      "tier": 2,
+      "fileNumber": 3,
+      "stagingFile": "03_create_staging.sql",
+      "stagingTable": "[dbo].[stage_jn_Case]",
+      "matchKeys": [ "jn_legacyid" ],
+      "dependencies": [ "jn_incident" ],
+      "droppedDependencies": [ "jn_caseevent" ],
+      "isCycleMember": true,
+      "columns": [
+        {
+          "name": "jn_caseeventid",
+          "sqlType": "NVARCHAR(100)",
+          "dataverseType": "Lookup",
+          "isLookup": true,
+          "targets": [ "jn_caseevent" ],
+          "targetsInScope": [ "jn_caseevent" ],
+          "requiresDeferredUpdate": true
+        }
+      ]
+    }
+  ]
+}
+```
 
 ## Conventions baked in (and where to change them)
 
@@ -140,5 +191,7 @@ DataverseMigrationScaffolder/
     MetadataService.cs             RetrieveAllEntities / RetrieveEntity wrappers
     MetadataMapper.cs              attribute filtering + SQL type mapping
     DependencySorter.cs            topological sort with cycle breaking
-    ScriptGenerator.cs             staging + guid DDL emission, batching
+    ScriptGenerator.cs             staging + guid DDL emission, batching, extra outputs
+    JsonWriter.cs                  minimal dependency-free JSON writer (manifest.json)
+    XlsxWriter.cs                  minimal dependency-free xlsx writer (data dictionary)
 ```

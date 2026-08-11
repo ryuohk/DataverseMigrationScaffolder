@@ -62,6 +62,7 @@ namespace DataverseMigrationScaffolder
         private CheckBox _chkTeardown;
         private CheckBox _chkManifest;
         private CheckBox _chkMermaid;
+        private CheckBox _chkJsonManifest;
         private DataGridView _grid;
         private ListBox _lstFiles;
         private TextBox _txtPreview;
@@ -203,14 +204,15 @@ namespace DataverseMigrationScaffolder
                 lblMatchKey, _txtMatchKey, _chkIndexes
             });
 
-            var grpExtras = new GroupBox { Text = "Extra outputs", Location = new Point(898, 2), Size = new Size(290, 52) };
+            var grpExtras = new GroupBox { Text = "Extra outputs", Location = new Point(898, 2), Size = new Size(410, 52) };
 
             _chkTruncate = new CheckBox { Text = "Truncate script", Location = new Point(10, 13), AutoSize = true };
             _chkTeardown = new CheckBox { Text = "Teardown script", Location = new Point(10, 31), AutoSize = true };
             _chkManifest = new CheckBox { Text = "Data dictionary", Location = new Point(145, 13), AutoSize = true };
             _chkMermaid = new CheckBox { Text = "Mermaid diagram", Location = new Point(145, 31), AutoSize = true };
+            _chkJsonManifest = new CheckBox { Text = "Manifest JSON", Location = new Point(283, 13), AutoSize = true, Checked = true };
 
-            grpExtras.Controls.AddRange(new Control[] { _chkTruncate, _chkTeardown, _chkManifest, _chkMermaid });
+            grpExtras.Controls.AddRange(new Control[] { _chkTruncate, _chkTeardown, _chkManifest, _chkMermaid, _chkJsonManifest });
 
             var tip = new ToolTip();
             tip.SetToolTip(_txtStagingPrefix, "Table name prefix, e.g. stage_ or custom_");
@@ -220,6 +222,7 @@ namespace DataverseMigrationScaffolder
             tip.SetToolTip(_chkTeardown, "teardown.sql - drops all staging tables (guid drops commented out)");
             tip.SetToolTip(_chkManifest, "data_dictionary.xlsx - one sheet per table, ordered by display name, plus an index sheet");
             tip.SetToolTip(_chkMermaid, "diagram.mmd - Mermaid flowchart of lookup dependencies grouped by tier (render at mermaid.live)");
+            tip.SetToolTip(_chkJsonManifest, "manifest.json - machine-readable run manifest: tables, tiers, file assignments, columns with types, lookup targets, match keys, cycle members");
 
             // ---- General guidance tooltips ------------------------------------------
             tip.AutoPopDelay = 15000;   // some of these take more than 5 seconds to read
@@ -560,6 +563,7 @@ namespace DataverseMigrationScaffolder
             _chkTeardown.Checked = _settings.GenerateTeardown;
             _chkManifest.Checked = _settings.GenerateDataDictionary;
             _chkMermaid.Checked = _settings.GenerateMermaid;
+            _chkJsonManifest.Checked = _settings.GenerateJsonManifest;
 
             UpdateOutputFolderLabel();
         }
@@ -587,6 +591,7 @@ namespace DataverseMigrationScaffolder
             _settings.GenerateTeardown = _chkTeardown.Checked;
             _settings.GenerateDataDictionary = _chkManifest.Checked;
             _settings.GenerateMermaid = _chkMermaid.Checked;
+            _settings.GenerateJsonManifest = _chkJsonManifest.Checked;
         }
 
         public override void ClosingPlugin(PluginCloseInfo info)
@@ -847,9 +852,10 @@ namespace DataverseMigrationScaffolder
             }
 
             if (!_settings.GenerateStaging && !_settings.GenerateGuid && !_settings.GenerateTruncateScript &&
-                !_settings.GenerateTeardown && !_settings.GenerateDataDictionary && !_settings.GenerateMermaid)
+                !_settings.GenerateTeardown && !_settings.GenerateDataDictionary && !_settings.GenerateMermaid &&
+                !_settings.GenerateJsonManifest)
             {
-                MessageBox.Show(this, "Enable at least one output (Staging, GUID, Truncate, Teardown, Data dictionary or Mermaid).",
+                MessageBox.Show(this, "Enable at least one output.",
                     "Nothing to generate", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }

@@ -85,6 +85,8 @@ namespace DataverseMigrationScaffolder.Core
         public bool GenerateDataDictionary { get; set; } = false;
         /// <summary>Emit diagram.mmd: Mermaid flowchart of lookup dependencies grouped by tier.</summary>
         public bool GenerateMermaid { get; set; } = false;
+        /// <summary>Emit manifest.json: machine-readable run manifest (tables, tiers, files, columns, lookups, cycles).</summary>
+        public bool GenerateJsonManifest { get; set; } = true;
 
         /// <summary>
         /// Field logical names excluded from dependency ranking on ALL tables

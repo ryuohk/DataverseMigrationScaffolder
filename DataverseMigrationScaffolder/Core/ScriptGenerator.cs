@@ -12,8 +12,9 @@ namespace DataverseMigrationScaffolder.Core
     /// is split across several files, but tiers are never mixed within one file.
     ///
     /// Output options (settings): staging tables, guid tables, drop-and-recreate vs
-    /// create-if-missing per kind, TRUNCATE for staging, guarded legacyid indexes,
-    /// teardown script, manifest CSV.
+    /// create-if-missing per kind, guarded match-key indexes, truncate and teardown
+    /// scripts, Excel data dictionary, Mermaid diagram, and a machine-readable
+    /// manifest.json describing the whole run.
     /// </summary>
     public class ScriptGenerator
     {
@@ -63,7 +64,7 @@ namespace DataverseMigrationScaffolder.Core
                 {
                     var file = new GeneratedFile
                     {
-                        FileName = string.Format("{0:00}_create_staging.sql", i + 1),
+                        FileName = StagingFileName(i),
                         Content = BuildStagingScript(chunks[i], i + 1, chunks.Count, result.Warnings),
                         Description = DescribeChunk(chunks[i])
                     };
@@ -78,7 +79,7 @@ namespace DataverseMigrationScaffolder.Core
                 {
                     var file = new GeneratedFile
                     {
-                        FileName = string.Format("{0:00}_create_guid.sql", i + 1),
+                        FileName = GuidFileName(i),
                         Content = BuildGuidScript(chunks[i], i + 1, chunks.Count, result.Warnings),
                         Description = DescribeChunk(chunks[i])
                     };
@@ -105,6 +106,11 @@ namespace DataverseMigrationScaffolder.Core
             if (_settings.GenerateMermaid)
             {
                 result.Files.Add(BuildMermaid(tiers, droppedEdges));
+            }
+
+            if (_settings.GenerateJsonManifest)
+            {
+                result.Files.Add(BuildJsonManifest(chunks, droppedEdges, result.Warnings));
             }
 
             return result;
@@ -156,8 +162,8 @@ namespace DataverseMigrationScaffolder.Core
 
             foreach (var table in chunk.Tables)
             {
-                EmitStagingTable(sb, table);
-                sb.AppendLine();
+                    EmitStagingTable(sb, table);
+                    sb.AppendLine();
             }
 
             return sb.ToString();
@@ -172,7 +178,7 @@ namespace DataverseMigrationScaffolder.Core
 
             foreach (var col in table.Columns)
             {
-                lines.Add(Tuple.Create(
+                    lines.Add(Tuple.Create(
                     string.Format("    [{0}] {1}", col.Name, col.SqlType),
                     ColumnComment(col)));
             }
@@ -186,24 +192,24 @@ namespace DataverseMigrationScaffolder.Core
 
             if (_settings.StagingDropRecreate)
             {
-                sb.AppendLine(string.Format("DROP TABLE IF EXISTS {0};", fullName));
-                sb.AppendLine(string.Format("CREATE TABLE {0}(", fullName));
-                AppendColumnLines(sb, lines, "");
-                sb.AppendLine(");");
+                    sb.AppendLine(string.Format("DROP TABLE IF EXISTS {0};", fullName));
+                    sb.AppendLine(string.Format("CREATE TABLE {0}(", fullName));
+                    AppendColumnLines(sb, lines, "");
+                    sb.AppendLine(");");
             }
             else
             {
-                sb.AppendLine(string.Format("IF OBJECT_ID(N'{0}', N'U') IS NULL", fullName));
-                sb.AppendLine("BEGIN");
-                sb.AppendLine(string.Format("    CREATE TABLE {0}(", fullName));
-                AppendColumnLines(sb, lines, "    ");
-                sb.AppendLine("    );");
-                sb.AppendLine("END");
+                    sb.AppendLine(string.Format("IF OBJECT_ID(N'{0}', N'U') IS NULL", fullName));
+                    sb.AppendLine("BEGIN");
+                    sb.AppendLine(string.Format("    CREATE TABLE {0}(", fullName));
+                    AppendColumnLines(sb, lines, "    ");
+                    sb.AppendLine("    );");
+                    sb.AppendLine("END");
             }
 
             if (_settings.IndexLegacyIdColumns)
             {
-                EmitLegacyIdIndexes(sb, fullName, _settings.StagingPrefix + table.SchemaName, table);
+                    EmitLegacyIdIndexes(sb, fullName, _settings.StagingPrefix + table.SchemaName, table);
             }
         }
 
@@ -211,10 +217,10 @@ namespace DataverseMigrationScaffolder.Core
         {
             for (var i = 0; i < lines.Count; i++)
             {
-                sb.Append(indent).Append(lines[i].Item1);
-                if (i < lines.Count - 1) sb.Append(",");
-                if (!string.IsNullOrEmpty(lines[i].Item2)) sb.Append("    -- " + lines[i].Item2);
-                sb.AppendLine();
+                    sb.Append(indent).Append(lines[i].Item1);
+                    if (i < lines.Count - 1) sb.Append(",");
+                    if (!string.IsNullOrEmpty(lines[i].Item2)) sb.Append("    -- " + lines[i].Item2);
+                    sb.AppendLine();
             }
         }
 
@@ -223,9 +229,9 @@ namespace DataverseMigrationScaffolder.Core
         {
             if (col.IsLookup && col.Targets != null && col.Targets.Length > 0)
             {
-                var shown = col.Targets.Take(5).ToArray();
-                var suffix = col.Targets.Length > 5 ? string.Format(", ... (+{0} more)", col.Targets.Length - 5) : "";
-                return (col.IsPolymorphic ? "polymorphic lookup: " : "lookup: ") + string.Join(", ", shown) + suffix;
+                    var shown = col.Targets.Take(5).ToArray();
+                    var suffix = col.Targets.Length > 5 ? string.Format(", ... (+{0} more)", col.Targets.Length - 5) : "";
+                    return (col.IsPolymorphic ? "polymorphic lookup: " : "lookup: ") + string.Join(", ", shown) + suffix;
             }
             if (col.IsLookup) return "lookup (no targets reported)";
             if (col.IsTypeCompanion) return "target table name for the polymorphic lookup above";
@@ -243,8 +249,8 @@ namespace DataverseMigrationScaffolder.Core
 
             foreach (var table in chunk.Tables)
             {
-                EmitGuidTable(sb, table);
-                sb.AppendLine();
+                    EmitGuidTable(sb, table);
+                    sb.AppendLine();
             }
 
             return sb.ToString();
@@ -265,46 +271,46 @@ namespace DataverseMigrationScaffolder.Core
             var nameCol = table.Columns.FirstOrDefault(c => c.IsPrimaryName);
             if (nameCol != null)
             {
-                lines.Add(string.Format("        [{0}] {1} NULL", nameCol.Name, nameCol.SqlType));
+                    lines.Add(string.Format("        [{0}] {1} NULL", nameCol.Name, nameCol.SqlType));
             }
             else if (!string.IsNullOrEmpty(table.PrimaryNameAttribute))
             {
-                lines.Add(string.Format("        [{0}] NVARCHAR(100) NULL", table.PrimaryNameAttribute));
+                    lines.Add(string.Format("        [{0}] NVARCHAR(100) NULL", table.PrimaryNameAttribute));
             }
 
             // 3. Match-key column(s) (configurable suffix, default *legacyid), only if the
             //    table actually has one in Dataverse.
             foreach (var col in table.Columns.Where(c => _settings.IsMatchKey(c.Name)))
             {
-                lines.Add(string.Format("        [{0}] {1} NULL", col.Name, col.SqlType));
+                    lines.Add(string.Format("        [{0}] {1} NULL", col.Name, col.SqlType));
             }
 
             // 4. Lookup columns (plus polymorphic type companions), alphabetical.
             foreach (var col in table.Columns.Where(c => c.IsLookup || c.IsTypeCompanion))
             {
-                lines.Add(string.Format("        [{0}] NVARCHAR(100) NULL", col.Name));
+                    lines.Add(string.Format("        [{0}] NVARCHAR(100) NULL", col.Name));
             }
 
             if (_settings.GuidDropRecreate)
             {
-                sb.AppendLine(string.Format("DROP TABLE IF EXISTS {0};", fullName));
-                sb.AppendLine(string.Format("CREATE TABLE {0}(", fullName));
-                sb.AppendLine(string.Join("," + Environment.NewLine, lines));
-                sb.AppendLine(");");
+                    sb.AppendLine(string.Format("DROP TABLE IF EXISTS {0};", fullName));
+                    sb.AppendLine(string.Format("CREATE TABLE {0}(", fullName));
+                    sb.AppendLine(string.Join("," + Environment.NewLine, lines));
+                    sb.AppendLine(");");
             }
             else
             {
-                sb.AppendLine(string.Format("IF OBJECT_ID(N'{0}', N'U') IS NULL", fullName));
-                sb.AppendLine("BEGIN");
-                sb.AppendLine(string.Format("    CREATE TABLE {0}(", fullName));
-                sb.AppendLine(string.Join("," + Environment.NewLine, lines));
-                sb.AppendLine("    );");
-                sb.AppendLine("END");
+                    sb.AppendLine(string.Format("IF OBJECT_ID(N'{0}', N'U') IS NULL", fullName));
+                    sb.AppendLine("BEGIN");
+                    sb.AppendLine(string.Format("    CREATE TABLE {0}(", fullName));
+                    sb.AppendLine(string.Join("," + Environment.NewLine, lines));
+                    sb.AppendLine("    );");
+                    sb.AppendLine("END");
             }
 
             if (_settings.IndexLegacyIdColumns)
             {
-                EmitLegacyIdIndexes(sb, fullName, _settings.GuidPrefix + table.SchemaName, table);
+                    EmitLegacyIdIndexes(sb, fullName, _settings.GuidPrefix + table.SchemaName, table);
             }
         }
 
@@ -314,11 +320,11 @@ namespace DataverseMigrationScaffolder.Core
         {
             foreach (var col in table.Columns.Where(c => _settings.IsMatchKey(c.Name)))
             {
-                var indexName = string.Format("IX_{0}_{1}", bareName, col.Name);
-                sb.AppendLine(string.Format(
+                    var indexName = string.Format("IX_{0}_{1}", bareName, col.Name);
+                    sb.AppendLine(string.Format(
                     "IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE [name] = N'{0}' AND [object_id] = OBJECT_ID(N'{1}'))",
                     indexName, fullName));
-                sb.AppendLine(string.Format("    CREATE NONCLUSTERED INDEX [{0}] ON {1}([{2}]);", indexName, fullName, col.Name));
+                    sb.AppendLine(string.Format("    CREATE NONCLUSTERED INDEX [{0}] ON {1}([{2}]);", indexName, fullName, col.Name));
             }
         }
 
@@ -342,20 +348,20 @@ namespace DataverseMigrationScaffolder.Core
             sb.AppendLine("-- Staging tables");
             foreach (var table in ordered)
             {
-                sb.AppendLine(string.Format("DROP TABLE IF EXISTS [{0}].[{1}{2}];", _settings.SchemaName, _settings.StagingPrefix, table.SchemaName));
+                    sb.AppendLine(string.Format("DROP TABLE IF EXISTS [{0}].[{1}{2}];", _settings.SchemaName, _settings.StagingPrefix, table.SchemaName));
             }
             sb.AppendLine();
             sb.AppendLine("-- GUID mapping tables (uncomment to drop accumulated mappings)");
             foreach (var table in ordered)
             {
-                sb.AppendLine(string.Format("-- DROP TABLE IF EXISTS [{0}].[{1}{2}];", _settings.SchemaName, _settings.GuidPrefix, table.SchemaName));
+                    sb.AppendLine(string.Format("-- DROP TABLE IF EXISTS [{0}].[{1}{2}];", _settings.SchemaName, _settings.GuidPrefix, table.SchemaName));
             }
 
             var file = new GeneratedFile
             {
-                FileName = "teardown.sql",
-                Content = sb.ToString(),
-                Description = "drops staging tables"
+                    FileName = "teardown.sql",
+                    Content = sb.ToString(),
+                    Description = "drops staging tables"
             };
             file.Tables.AddRange(ordered.Select(t => t.LogicalName));
             return file;
@@ -381,20 +387,20 @@ namespace DataverseMigrationScaffolder.Core
             sb.AppendLine("-- Staging tables");
             foreach (var table in ordered)
             {
-                sb.AppendLine(string.Format("TRUNCATE TABLE [{0}].[{1}{2}];", _settings.SchemaName, _settings.StagingPrefix, table.SchemaName));
+                    sb.AppendLine(string.Format("TRUNCATE TABLE [{0}].[{1}{2}];", _settings.SchemaName, _settings.StagingPrefix, table.SchemaName));
             }
             sb.AppendLine();
             sb.AppendLine("-- GUID mapping tables (uncomment to empty accumulated mappings)");
             foreach (var table in ordered)
             {
-                sb.AppendLine(string.Format("-- TRUNCATE TABLE [{0}].[{1}{2}];", _settings.SchemaName, _settings.GuidPrefix, table.SchemaName));
+                    sb.AppendLine(string.Format("-- TRUNCATE TABLE [{0}].[{1}{2}];", _settings.SchemaName, _settings.GuidPrefix, table.SchemaName));
             }
 
             var file = new GeneratedFile
             {
-                FileName = "truncate.sql",
-                Content = sb.ToString(),
-                Description = "truncates staging tables"
+                    FileName = "truncate.sql",
+                    Content = sb.ToString(),
+                    Description = "truncates staging tables"
             };
             file.Tables.AddRange(ordered.Select(t => t.LogicalName));
             return file;
@@ -410,7 +416,7 @@ namespace DataverseMigrationScaffolder.Core
         private GeneratedFile BuildMermaid(List<List<TableModel>> tiers, Dictionary<string, HashSet<string>> droppedEdges)
         {
             var selected = new HashSet<string>(
-                tiers.SelectMany(t => t).Select(t => t.LogicalName.ToLowerInvariant()));
+                    tiers.SelectMany(t => t).Select(t => t.LogicalName.ToLowerInvariant()));
 
             var sb = new StringBuilder();
             sb.AppendLine("%% Dataverse Migration Scaffolder - dependency diagram");
@@ -422,34 +428,34 @@ namespace DataverseMigrationScaffolder.Core
 
             for (var tierIndex = 0; tierIndex < tiers.Count; tierIndex++)
             {
-                sb.AppendLine(string.Format("    subgraph tier{0}[\"Tier {0}\"]", tierIndex));
-                foreach (var table in tiers[tierIndex])
-                {
+                    sb.AppendLine(string.Format("    subgraph tier{0}[\"Tier {0}\"]", tierIndex));
+                    foreach (var table in tiers[tierIndex])
+                    {
                     sb.AppendLine(string.Format("        {0}[\"{1}\"]",
                         table.LogicalName, MermaidLabel(table)));
-                }
-                sb.AppendLine("    end");
+                    }
+                    sb.AppendLine("    end");
             }
 
             var emitted = new HashSet<string>();
             foreach (var table in tiers.SelectMany(t => t))
             {
-                HashSet<string> dropped;
-                droppedEdges.TryGetValue(table.LogicalName.ToLowerInvariant(), out dropped);
+                    HashSet<string> dropped;
+                    droppedEdges.TryGetValue(table.LogicalName.ToLowerInvariant(), out dropped);
 
-                foreach (var dep in table.Dependencies.Where(d => selected.Contains(d)).OrderBy(d => d))
-                {
+                    foreach (var dep in table.Dependencies.Where(d => selected.Contains(d)).OrderBy(d => d))
+                    {
                     var isDropped = dropped != null && dropped.Contains(dep);
                     var edge = string.Format("    {0} {1} {2}", table.LogicalName, isDropped ? "-.->" : "-->", dep);
                     if (emitted.Add(edge)) sb.AppendLine(edge);
-                }
+                    }
             }
 
             var file = new GeneratedFile
             {
-                FileName = "diagram.mmd",
-                Content = sb.ToString(),
-                Description = "Mermaid dependency diagram"
+                    FileName = "diagram.mmd",
+                    Content = sb.ToString(),
+                    Description = "Mermaid dependency diagram"
             };
             file.Tables.AddRange(tiers.SelectMany(t => t).Select(t => t.LogicalName));
             return file;
@@ -458,8 +464,181 @@ namespace DataverseMigrationScaffolder.Core
         private static string MermaidLabel(TableModel table)
         {
             var display = (table.DisplayName ?? table.LogicalName)
-                .Replace("\"", "'").Replace("[", "(").Replace("]", ")");
+                    .Replace("\"", "'").Replace("[", "(").Replace("]", ")");
             return display + "<br/><small>" + table.LogicalName + "</small>";
+        }
+
+        // ---------------------------------------------------------------- json manifest
+
+        /// <summary>
+        /// Machine-readable run manifest: every table with its dependency tier, the file it
+        /// was written to, its columns (SQL + Dataverse types), lookup targets, match keys,
+        /// and the dependency edges dropped to break cycles. Intended for ETL pipelines that
+        /// need to sequence packages or drive deferred-lookup update passes.
+        /// </summary>
+        private GeneratedFile BuildJsonManifest(List<TierChunk> chunks,
+                                                Dictionary<string, HashSet<string>> droppedEdges,
+                                                List<string> warnings)
+        {
+            var allTables = chunks.SelectMany(c => c.Tables).ToList();
+            var inScope = new HashSet<string>(allTables.Select(t => t.LogicalName), StringComparer.OrdinalIgnoreCase);
+            var version = typeof(ScriptGenerator).Assembly.GetName().Version;
+            var w = new JsonWriter();
+
+            w.StartObject();
+            w.Prop("manifestVersion", 1);
+
+            w.StartObject("generator");
+            w.Prop("tool", "Dataverse Migration Scaffolder");
+            w.Prop("version", version == null ? "" : version.ToString());
+            w.Prop("generatedOn", DateTimeOffset.Now.ToString("o"));
+            w.EndObject();
+
+            w.StartObject("options");
+            w.Prop("schema", _settings.SchemaName);
+            w.Prop("stagingPrefix", _settings.StagingPrefix);
+            w.Prop("guidPrefix", _settings.GuidPrefix);
+            w.Prop("matchKeySuffixes", _settings.MatchKeySuffixes);
+            w.Prop("batchSize", _settings.BatchSize);
+            w.Prop("stagingGenerated", _settings.GenerateStaging);
+            w.Prop("guidGenerated", _settings.GenerateGuid);
+            w.Prop("stagingMode", _settings.StagingDropRecreate ? "dropAndRecreate" : "createIfMissing");
+            w.Prop("guidMode", _settings.GuidDropRecreate ? "dropAndRecreate" : "createIfMissing");
+            w.Prop("matchKeyIndexes", _settings.IndexLegacyIdColumns);
+            w.StringArray("dependencyRankingExclusions",
+                _settings.GetDependencyExclusions().OrderBy(x => x, StringComparer.OrdinalIgnoreCase));
+            w.EndObject();
+
+            w.Prop("tierCount", chunks.Count == 0 ? 0 : chunks.Max(c => c.TierIndex) + 1);
+            w.Prop("tableCount", allTables.Count);
+
+            // ---- files -----------------------------------------------------------
+            w.StartArray("files");
+            for (var i = 0; i < chunks.Count; i++)
+            {
+                if (_settings.GenerateStaging) WriteFileEntry(w, StagingFileName(i), "staging", chunks[i]);
+                if (_settings.GenerateGuid) WriteFileEntry(w, GuidFileName(i), "guid", chunks[i]);
+            }
+            w.EndArray();
+
+            // ---- tables (emitted in tier / file order) ----------------------------
+            w.StartArray("tables");
+            for (var chunkIndex = 0; chunkIndex < chunks.Count; chunkIndex++)
+            {
+                var chunk = chunks[chunkIndex];
+                foreach (var table in chunk.Tables)
+                {
+                    HashSet<string> dropped;
+                    droppedEdges.TryGetValue(table.LogicalName.ToLowerInvariant(), out dropped);
+                    var droppedList = dropped == null
+                        ? new List<string>()
+                        : dropped.OrderBy(d => d, StringComparer.OrdinalIgnoreCase).ToList();
+
+                    w.StartObject();
+                    w.Prop("logicalName", table.LogicalName);
+                    w.Prop("schemaName", table.SchemaName);
+                    w.Prop("displayName", table.DisplayName);
+                    w.Prop("prefix", table.Prefix);
+                    w.Prop("tier", chunk.TierIndex);
+                    w.Prop("tierPart", chunk.Part);
+                    w.Prop("tierTotalParts", chunk.TotalParts);
+                    w.Prop("fileNumber", chunkIndex + 1);
+                    w.Prop("stagingFile", _settings.GenerateStaging ? StagingFileName(chunkIndex) : null);
+                    w.Prop("guidFile", _settings.GenerateGuid ? GuidFileName(chunkIndex) : null);
+                    w.Prop("stagingTable", string.Format("[{0}].[{1}{2}]",
+                        _settings.SchemaName, _settings.StagingPrefix, table.SchemaName));
+                    w.Prop("guidTable", string.Format("[{0}].[{1}{2}]",
+                        _settings.SchemaName, _settings.GuidPrefix, table.SchemaName));
+                    w.Prop("primaryIdAttribute", table.PrimaryIdAttribute);
+                    w.Prop("primaryNameAttribute", table.PrimaryNameAttribute);
+                    w.Prop("isCycleMember", droppedList.Count > 0);
+
+                    w.StringArray("matchKeys",
+                        table.Columns.Where(c => _settings.IsMatchKey(c.Name)).Select(c => c.Name));
+                    w.StringArray("dependencies",
+                        table.Dependencies.Where(d => inScope.Contains(d))
+                                          .OrderBy(d => d, StringComparer.OrdinalIgnoreCase));
+                    w.StringArray("externalDependencies",
+                        table.Dependencies.Where(d => !inScope.Contains(d))
+                                          .OrderBy(d => d, StringComparer.OrdinalIgnoreCase));
+                    w.StringArray("droppedDependencies", droppedList);
+
+                    w.StartArray("columns");
+                    foreach (var col in table.Columns)
+                    {
+                        var targets = col.Targets ?? new string[0];
+                        var deferred = col.IsLookup && droppedList.Count > 0 &&
+                                       targets.Any(t => droppedList.Contains(t, StringComparer.OrdinalIgnoreCase));
+
+                        w.StartObject();
+                        w.Prop("name", col.Name);
+                        w.Prop("displayName", col.DisplayName);
+                        w.Prop("sqlType", col.SqlType);
+                        w.Prop("dataverseType", col.AttributeTypeName);
+                        w.Prop("isCustom", col.IsCustomAttribute);
+                        w.Prop("isPrimaryId", col.IsPrimaryId);
+                        w.Prop("isPrimaryName", col.IsPrimaryName);
+                        w.Prop("isMatchKey", _settings.IsMatchKey(col.Name));
+                        w.Prop("isLookup", col.IsLookup);
+                        w.Prop("isPolymorphic", col.IsPolymorphic);
+                        w.Prop("isTypeCompanion", col.IsTypeCompanion);
+                        w.Prop("requiresDeferredUpdate", deferred);
+                        w.StringArray("targets", targets);
+                        w.StringArray("targetsInScope", targets.Where(t => inScope.Contains(t)));
+                        w.EndObject();
+                    }
+                    w.EndArray();
+
+                    w.EndObject();
+                }
+            }
+            w.EndArray();
+
+            // ---- cycles ----------------------------------------------------------
+            w.StartArray("cycles");
+            foreach (var kv in droppedEdges.OrderBy(k => k.Key, StringComparer.OrdinalIgnoreCase))
+            {
+                w.StartObject();
+                w.Prop("table", kv.Key);
+                w.StringArray("droppedTargets", kv.Value.OrderBy(v => v, StringComparer.OrdinalIgnoreCase));
+                w.EndObject();
+            }
+            w.EndArray();
+
+            w.StringArray("warnings", warnings);
+            w.EndObject();
+
+            var file = new GeneratedFile
+            {
+                FileName = "manifest.json",
+                Content = w.ToString(),
+                Description = "run manifest (json)"
+            };
+            file.Tables.AddRange(allTables.Select(t => t.LogicalName));
+            return file;
+        }
+
+        private void WriteFileEntry(JsonWriter w, string fileName, string kind, TierChunk chunk)
+        {
+            w.StartObject();
+            w.Prop("fileName", fileName);
+            w.Prop("kind", kind);
+            w.Prop("tier", chunk.TierIndex);
+            w.Prop("tierPart", chunk.Part);
+            w.Prop("tierTotalParts", chunk.TotalParts);
+            w.Prop("tableCount", chunk.Tables.Count);
+            w.StringArray("tables", chunk.Tables.Select(t => t.LogicalName));
+            w.EndObject();
+        }
+
+        private static string StagingFileName(int chunkIndex)
+        {
+            return string.Format("{0:00}_create_staging.sql", chunkIndex + 1);
+        }
+
+        private static string GuidFileName(int chunkIndex)
+        {
+            return string.Format("{0:00}_create_guid.sql", chunkIndex + 1);
         }
 
         // ---------------------------------------------------------------- data dictionary
