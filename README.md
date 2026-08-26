@@ -1,6 +1,8 @@
+<img align="right" width="110" alt="Dataverse Migration Scaffolder icon" src="https://github.com/user-attachments/assets/201e3f53-4d9d-4d74-a2c1-bb74a8b15f01" />
+
 # Dataverse Migration Scaffolder (XrmToolBox tool)
 
-<img width="120" alt="Dataverse Migration Scaffolder icon" src="https://github.com/user-attachments/assets/201e3f53-4d9d-4d74-a2c1-bb74a8b15f01" />
+[XrmToolBox Tool Library](https://www.xrmtoolbox.com/plugins/plugininfo/?id=ccf116e2-dc7a-f111-b27e-000d3add9fd6) · [NuGet](https://www.nuget.org/packages/DataverseMigrationScaffolder/)
 
 Generates the SQL DDL for a data-migration harness directly from Dataverse metadata:
 
@@ -21,14 +23,17 @@ header. Tiers are then computed on the clean graph, so cycle members merge into 
 tier instead of inflating the tier count. Connection and environment selection come from
 XrmToolBox's built-in connection manager.
 
-## Build
+## Install
+
+Open XrmToolBox, go to the **Tool Library**, search for **Dataverse Migration Scaffolder**, and
+install. That is the normal path and it keeps you on the latest release automatically.
+
+## Build from source
 
 1. Open `DataverseMigrationScaffolder.sln` in Visual Studio 2022.
 2. Restore NuGet packages (the project references the latest `XrmToolBoxPackage`, which pulls in
    XrmToolBox.Extensibility and the Dataverse SDK).
 3. Build (Debug or Release, Any CPU, .NET Framework 4.8).
-
-## Install into XrmToolBox
 
 Copy `DataverseMigrationScaffolder.dll` from `bin\Debug` (or `bin\Release`) into your XrmToolBox
 plugins folder, typically:
