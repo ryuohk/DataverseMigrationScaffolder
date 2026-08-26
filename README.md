@@ -1,6 +1,6 @@
 # Dataverse Migration Scaffolder (XrmToolBox tool)
 
-![Dataverse Migration Scaffolder](images/screenshot.png)
+<img width="200" height="200" alt="icon" src="https://github.com/user-attachments/assets/201e3f53-4d9d-4d74-a2c1-bb74a8b15f01" />
 
 Generates the SQL DDL for a data-migration harness directly from Dataverse metadata:
 
