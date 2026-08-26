@@ -1,6 +1,6 @@
-<img align="right" width="110" alt="Dataverse Migration Scaffolder icon" src="https://github.com/user-attachments/assets/201e3f53-4d9d-4d74-a2c1-bb74a8b15f01" />
-
 # Dataverse Migration Scaffolder (XrmToolBox tool)
+
+<img align="right" width="110" alt="Dataverse Migration Scaffolder icon" src="https://github.com/user-attachments/assets/201e3f53-4d9d-4d74-a2c1-bb74a8b15f01" />
 
 [XrmToolBox Tool Library](https://www.xrmtoolbox.com/plugins/plugininfo/?id=ccf116e2-dc7a-f111-b27e-000d3add9fd6) · [NuGet](https://www.nuget.org/packages/DataverseMigrationScaffolder/)
 
