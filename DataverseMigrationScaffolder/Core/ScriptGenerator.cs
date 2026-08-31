@@ -13,8 +13,9 @@ namespace DataverseMigrationScaffolder.Core
     ///
     /// Output options (settings): staging tables, guid tables, drop-and-recreate vs
     /// create-if-missing per kind, guarded match-key indexes, truncate and teardown
-    /// scripts, Excel data dictionary, Mermaid diagram, and a machine-readable
-    /// manifest.json describing the whole run.
+    /// scripts, Excel data dictionary, Mermaid diagram, a machine-readable
+    /// manifest.json describing the whole run, and a harness metadata seed script
+    /// populating meta.Entity / meta.ColumnMap for a downstream package generator.
     /// </summary>
     public class ScriptGenerator
     {
@@ -106,6 +107,13 @@ namespace DataverseMigrationScaffolder.Core
             if (_settings.GenerateMermaid)
             {
                 result.Files.Add(BuildMermaid(tiers, droppedEdges));
+            }
+
+            // Built before the JSON manifest so any warnings it raises (tables with no match
+            // key) are already in the list the manifest serialises.
+            if (_settings.GenerateMetadataSeed)
+            {
+                result.Files.Add(BuildMetadataSeed(chunks, droppedEdges, result.Warnings));
             }
 
             if (_settings.GenerateJsonManifest)
@@ -639,6 +647,483 @@ namespace DataverseMigrationScaffolder.Core
         private static string GuidFileName(int chunkIndex)
         {
             return string.Format("{0:00}_create_guid.sql", chunkIndex + 1);
+        }
+
+        // ---------------------------------------------------------------- harness metadata
+
+        /// <summary>SSIS type facts parsed out of a generated SQL type string.</summary>
+        private class SsisTypeInfo
+        {
+            public string DataType = "DT_WSTR";
+            public string MaxLength = "NULL";
+            public string Precision = "NULL";
+            public string Scale = "NULL";
+        }
+
+        /// <summary>
+        /// Maps a generated SQL type onto the SSIS data type a data flow column needs.
+        /// Length/precision/scale come back as SQL literals ("100", "NULL") ready to embed.
+        /// </summary>
+        private static SsisTypeInfo ToSsisType(string sqlType)
+        {
+            var info = new SsisTypeInfo();
+            if (string.IsNullOrEmpty(sqlType)) return info;
+
+            var upper = sqlType.ToUpperInvariant().Trim();
+            var arg = "";
+            var open = upper.IndexOf('(');
+            if (open >= 0 && upper.EndsWith(")"))
+            {
+                arg = upper.Substring(open + 1, upper.Length - open - 2).Trim();
+                upper = upper.Substring(0, open).Trim();
+            }
+
+            switch (upper)
+            {
+                case "NVARCHAR":
+                    if (string.Equals(arg, "MAX", StringComparison.OrdinalIgnoreCase))
+                    {
+                        info.DataType = "DT_NTEXT";
+                    }
+                    else
+                    {
+                        info.DataType = "DT_WSTR";
+                        info.MaxLength = NumberOrNull(arg);
+                    }
+                    break;
+
+                case "VARCHAR":
+                    if (string.Equals(arg, "MAX", StringComparison.OrdinalIgnoreCase))
+                    {
+                        info.DataType = "DT_TEXT";
+                    }
+                    else
+                    {
+                        info.DataType = "DT_STR";
+                        info.MaxLength = NumberOrNull(arg);
+                    }
+                    break;
+
+                case "INT": info.DataType = "DT_I4"; break;
+                case "BIGINT": info.DataType = "DT_I8"; break;
+                case "BIT": info.DataType = "DT_BOOL"; break;
+                case "FLOAT": info.DataType = "DT_R8"; break;
+                case "UNIQUEIDENTIFIER": info.DataType = "DT_GUID"; break;
+                case "DATE": info.DataType = "DT_DBDATE"; break;
+
+                case "DATETIME2":
+                    info.DataType = "DT_DBTIMESTAMP2";
+                    info.Scale = string.IsNullOrEmpty(arg) ? "7" : NumberOrNull(arg);
+                    break;
+
+                case "DECIMAL":
+                case "NUMERIC":
+                    info.DataType = "DT_NUMERIC";
+                    var parts = arg.Split(',');
+                    info.Precision = parts.Length > 0 ? NumberOrNull(parts[0]) : "NULL";
+                    info.Scale = parts.Length > 1 ? NumberOrNull(parts[1]) : "0";
+                    break;
+
+                case "MONEY":
+                    info.DataType = "DT_CY";
+                    break;
+            }
+
+            return info;
+        }
+
+        private static string NumberOrNull(string text)
+        {
+            int value;
+            return int.TryParse(text == null ? "" : text.Trim(), out value) ? value.ToString() : "NULL";
+        }
+
+        /// <summary>SQL string literal, or NULL when there is nothing to write.</summary>
+        private static string Q(string value)
+        {
+            if (string.IsNullOrEmpty(value)) return "NULL";
+            return "N'" + value.Replace("'", "''") + "'";
+        }
+
+        private static string Bit(bool value)
+        {
+            return value ? "1" : "0";
+        }
+
+        /// <summary>
+        /// Columns Dataverse calculates and refuses to accept on write. They stay in the
+        /// metadata (staging still carries them, and they are useful for reconciliation)
+        /// but are flagged so no generated data flow ever maps them to a destination.
+        /// </summary>
+        private static bool IsPlatformCalculated(SqlColumn col)
+        {
+            if (col.Name == null) return false;
+            return col.Name.EndsWith("_base", StringComparison.OrdinalIgnoreCase)
+                || col.Name.Equals("exchangerate", StringComparison.OrdinalIgnoreCase);
+        }
+
+        /// <summary>
+        /// Emits meta_seed.sql: the harness metadata tables plus the rows describing every
+        /// generated table and column. This is the handoff between the scaffolder and the
+        /// SSIS package generator, which reads meta.Entity / meta.ColumnMap rather than
+        /// spreadsheets.
+        ///
+        /// Cycle members get a second row with PassNo = 2 carrying only the lookups that
+        /// were deferred to break the cycle, which is the deferred UPDATE pass the warnings
+        /// have always described in prose.
+        ///
+        /// Rerunnable by design. Structural facts are refreshed on every run; the values a
+        /// human tunes are written once on insert and never overwritten.
+        /// </summary>
+        private GeneratedFile BuildMetadataSeed(List<TierChunk> chunks,
+                                                Dictionary<string, HashSet<string>> droppedEdges,
+                                                List<string> warnings)
+        {
+            var allTables = chunks.SelectMany(c => c.Tables).ToList();
+            var entityRows = new List<string>();
+            var columnRows = new List<string>();
+            var withoutMatchKey = new List<string>();
+            var deferredPasses = 0;
+
+            foreach (var chunk in chunks)
+            {
+                foreach (var table in chunk.Tables)
+                {
+                    var matchKeys = table.Columns.Where(c => _settings.IsMatchKey(c.Name)).ToList();
+                    var legacyField = matchKeys.Count > 0 ? matchKeys[0].Name : null;
+                    var stagingTable = string.Format("[{0}].[{1}{2}]",
+                        _settings.SchemaName, _settings.StagingPrefix, table.SchemaName);
+                    var guidTable = string.Format("[{0}].[{1}{2}]",
+                        _settings.SchemaName, _settings.GuidPrefix, table.SchemaName);
+
+                    // Without a match key there is no create-versus-update decision and no id
+                    // mapping, so the entity is seeded disabled rather than silently broken.
+                    if (legacyField == null) withoutMatchKey.Add(table.LogicalName);
+
+                    entityRows.Add(string.Format("    ({0}, 1, {1}, {2}, {3}, {4}, {5}, {6})",
+                        chunk.TierIndex,
+                        Q(table.LogicalName),
+                        Q(stagingTable),
+                        Q(guidTable),
+                        Q(table.PrimaryIdAttribute),
+                        Q(legacyField),
+                        Bit(legacyField != null)));
+
+                    var sortOrder = 0;
+                    foreach (var col in table.Columns)
+                    {
+                        sortOrder++;
+                        var ssis = ToSsisType(col.SqlType);
+                        var calculated = IsPlatformCalculated(col);
+
+                        // The primary id is never written on create (Dataverse assigns it) and
+                        // is the record key on update - exactly the existing harness split.
+                        var onCreate = !calculated && !col.IsPrimaryId;
+                        var onUpdate = !calculated;
+
+                        columnRows.Add(ColumnRow(table.LogicalName, 1, col, ssis, onCreate, onUpdate, sortOrder));
+                    }
+
+                    // ---- deferred pass for cycle members ----------------------------
+                    HashSet<string> dropped;
+                    droppedEdges.TryGetValue(table.LogicalName.ToLowerInvariant(), out dropped);
+                    if (dropped == null || dropped.Count == 0) continue;
+
+                    var deferredCols = table.Columns
+                        .Where(c => c.IsLookup && c.Targets != null &&
+                                    c.Targets.Any(t => dropped.Contains(t.ToLowerInvariant())))
+                        .ToList();
+                    if (deferredCols.Count == 0) continue;
+
+                    deferredPasses++;
+                    entityRows.Add(string.Format("    ({0}, 2, {1}, {2}, {3}, {4}, {5}, {6})",
+                        chunk.TierIndex,
+                        Q(table.LogicalName),
+                        Q(stagingTable),
+                        Q(guidTable),
+                        Q(table.PrimaryIdAttribute),
+                        Q(legacyField),
+                        Bit(legacyField != null)));
+
+                    var pass2Order = 0;
+                    var idCol = table.Columns.FirstOrDefault(c => c.IsPrimaryId);
+                    if (idCol != null)
+                    {
+                        pass2Order++;
+                        columnRows.Add(ColumnRow(table.LogicalName, 2, idCol, ToSsisType(idCol.SqlType),
+                            false, true, pass2Order));
+                    }
+                    foreach (var key in matchKeys)
+                    {
+                        pass2Order++;
+                        columnRows.Add(ColumnRow(table.LogicalName, 2, key, ToSsisType(key.SqlType),
+                            false, false, pass2Order));
+                    }
+                    foreach (var col in deferredCols)
+                    {
+                        pass2Order++;
+                        columnRows.Add(ColumnRow(table.LogicalName, 2, col, ToSsisType(col.SqlType),
+                            false, true, pass2Order));
+                    }
+                }
+            }
+
+            if (withoutMatchKey.Count > 0)
+            {
+                warnings.Add(string.Format(
+                    "No match-key column ({0}) on {1} table(s) - seeded into meta.Entity with IsEnabled = 0 " +
+                    "because create-versus-update cannot be decided without one: {2}",
+                    _settings.MatchKeySuffixes,
+                    withoutMatchKey.Count,
+                    string.Join(", ", withoutMatchKey.OrderBy(t => t, StringComparer.OrdinalIgnoreCase))));
+            }
+
+            var sb = new StringBuilder();
+            AppendMetadataHeader(sb, allTables.Count, chunks, entityRows.Count, columnRows.Count, deferredPasses);
+            AppendMetadataDdl(sb);
+            AppendMetadataStaging(sb, entityRows, columnRows);
+            AppendMetadataMerge(sb);
+
+            var file = new GeneratedFile
+            {
+                FileName = "meta_seed.sql",
+                Content = sb.ToString(),
+                Description = string.Format("harness metadata: {0} entity rows, {1} column rows",
+                    entityRows.Count, columnRows.Count)
+            };
+            file.Tables.AddRange(allTables.Select(t => t.LogicalName));
+            return file;
+        }
+
+        private string ColumnRow(string logicalName, int passNo, SqlColumn col, SsisTypeInfo ssis,
+                                 bool onCreate, bool onUpdate, int sortOrder)
+        {
+            // Polymorphic lookups have no single target; their companion "<name>type" column
+            // carries the discriminator, so the target is left NULL rather than truncated.
+            var targets = col.Targets ?? new string[0];
+            var target = targets.Length == 1 ? targets[0] : null;
+
+            return string.Format("    ({0}, {1}, {2}, {3}, {4}, {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12})",
+                Q(logicalName),
+                passNo,
+                Q(col.Name),
+                Q(col.Name),
+                Q(ssis.DataType),
+                ssis.MaxLength,
+                ssis.Precision,
+                ssis.Scale,
+                Bit(onCreate),
+                Bit(onUpdate),
+                Bit(col.IsLookup),
+                Q(target),
+                sortOrder);
+        }
+
+        private void AppendMetadataHeader(StringBuilder sb, int tableCount, List<TierChunk> chunks,
+                                          int entityRowCount, int columnRowCount, int deferredPasses)
+        {
+            var tierCount = chunks.Count == 0 ? 0 : chunks.Max(c => c.TierIndex) + 1;
+
+            sb.AppendLine("/*");
+            sb.AppendLine(" * Harness metadata seed - meta.Entity and meta.ColumnMap");
+            sb.AppendLine(string.Format(" * Generated by Dataverse Migration Scaffolder on {0:yyyy-MM-dd HH:mm}", DateTime.Now));
+            sb.AppendLine(" *");
+            sb.AppendLine(string.Format(" * {0} tables across {1} dependency tier(s).", tableCount, tierCount));
+            sb.AppendLine(string.Format(" * {0} entity row(s) including {1} deferred pass(es) (PassNo = 2).",
+                entityRowCount, deferredPasses));
+            sb.AppendLine(string.Format(" * {0} column mapping row(s).", columnRowCount));
+            sb.AppendLine(" *");
+            sb.AppendLine(" * Rerunnable. Structural facts are refreshed on every run:");
+            sb.AppendLine(" *   meta.Entity      Wave, StagingTable, GuidTable, PrimaryIdField, LegacyIdField");
+            sb.AppendLine(" *   meta.ColumnMap   SsisDataType, MaxLength, NumericPrecision, NumericScale,");
+            sb.AppendLine(" *                    IsLookup, LookupTargetEntity, SortOrder");
+            sb.AppendLine(" *");
+            sb.AppendLine(" * Values you tune by hand are written once on insert and never overwritten:");
+            sb.AppendLine(" *   meta.Entity      WriteMode, BatchSize, ThreadCount, IsEnabled");
+            sb.AppendLine(" *   meta.ColumnMap   IncludeOnCreate, IncludeOnUpdate");
+            sb.AppendLine(" *");
+            sb.AppendLine(" * Attributes that no longer exist in Dataverse are deleted from meta.ColumnMap.");
+            sb.AppendLine(" * Entities absent from this run are left alone, so scoping the scaffolder to one");
+            sb.AppendLine(" * solution never deletes another solution's metadata.");
+            sb.AppendLine(" */");
+            sb.AppendLine("SET ANSI_NULLS ON;");
+            sb.AppendLine("SET QUOTED_IDENTIFIER ON;");
+            sb.AppendLine("SET NOCOUNT ON;");
+            sb.AppendLine("GO");
+            sb.AppendLine();
+        }
+
+        private void AppendMetadataDdl(StringBuilder sb)
+        {
+            sb.AppendLine("IF SCHEMA_ID(N'meta') IS NULL");
+            sb.AppendLine("    EXEC (N'CREATE SCHEMA meta;');");
+            sb.AppendLine("GO");
+            sb.AppendLine();
+            sb.AppendLine("IF OBJECT_ID(N'[meta].[Entity]', N'U') IS NULL");
+            sb.AppendLine("BEGIN");
+            sb.AppendLine("    CREATE TABLE meta.Entity (");
+            sb.AppendLine("        EntityId       INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_meta_Entity PRIMARY KEY,");
+            sb.AppendLine("        Wave           SMALLINT NOT NULL,");
+            sb.AppendLine("        PassNo         TINYINT  NOT NULL CONSTRAINT DF_meta_Entity_PassNo DEFAULT (1),");
+            sb.AppendLine("        LogicalName    NVARCHAR(128) NOT NULL,");
+            sb.AppendLine("        StagingTable   NVARCHAR(256) NOT NULL,");
+            sb.AppendLine("        GuidTable      NVARCHAR(256) NOT NULL,");
+            sb.AppendLine("        PrimaryIdField NVARCHAR(128) NOT NULL,");
+            sb.AppendLine("        LegacyIdField  NVARCHAR(128) NULL,");
+            sb.AppendLine("        WriteMode      VARCHAR(20) NOT NULL");
+            sb.AppendLine("                       CONSTRAINT DF_meta_Entity_WriteMode DEFAULT ('CreateUpdate'),");
+            sb.AppendLine("        BatchSize      INT NOT NULL CONSTRAINT DF_meta_Entity_BatchSize   DEFAULT (100),");
+            sb.AppendLine("        ThreadCount    INT NOT NULL CONSTRAINT DF_meta_Entity_ThreadCount DEFAULT (20),");
+            sb.AppendLine("        IsEnabled      BIT NOT NULL CONSTRAINT DF_meta_Entity_IsEnabled   DEFAULT (1),");
+            sb.AppendLine("        CONSTRAINT UQ_meta_Entity_Name_Pass UNIQUE (LogicalName, PassNo),");
+            sb.AppendLine("        CONSTRAINT CK_meta_Entity_WriteMode CHECK (WriteMode IN ('CreateUpdate','Upsert'))");
+            sb.AppendLine("    );");
+            sb.AppendLine("END");
+            sb.AppendLine("GO");
+            sb.AppendLine();
+            sb.AppendLine("IF OBJECT_ID(N'[meta].[ColumnMap]', N'U') IS NULL");
+            sb.AppendLine("BEGIN");
+            sb.AppendLine("    CREATE TABLE meta.ColumnMap (");
+            sb.AppendLine("        ColumnMapId        INT IDENTITY(1,1) NOT NULL CONSTRAINT PK_meta_ColumnMap PRIMARY KEY,");
+            sb.AppendLine("        EntityId           INT NOT NULL");
+            sb.AppendLine("                           CONSTRAINT FK_meta_ColumnMap_Entity REFERENCES meta.Entity (EntityId),");
+            sb.AppendLine("        StagingColumn      NVARCHAR(128) NOT NULL,");
+            sb.AppendLine("        TargetAttribute    NVARCHAR(128) NOT NULL,");
+            sb.AppendLine("        SsisDataType       VARCHAR(20)   NOT NULL,");
+            sb.AppendLine("        MaxLength          INT     NULL,");
+            sb.AppendLine("        NumericPrecision   TINYINT NULL,");
+            sb.AppendLine("        NumericScale       TINYINT NULL,");
+            sb.AppendLine("        IncludeOnCreate    BIT NOT NULL CONSTRAINT DF_meta_ColumnMap_IncCreate DEFAULT (1),");
+            sb.AppendLine("        IncludeOnUpdate    BIT NOT NULL CONSTRAINT DF_meta_ColumnMap_IncUpdate DEFAULT (1),");
+            sb.AppendLine("        IsLookup           BIT NOT NULL CONSTRAINT DF_meta_ColumnMap_IsLookup  DEFAULT (0),");
+            sb.AppendLine("        LookupTargetEntity NVARCHAR(128) NULL,");
+            sb.AppendLine("        SortOrder          INT NOT NULL CONSTRAINT DF_meta_ColumnMap_SortOrder DEFAULT (0),");
+            sb.AppendLine("        CONSTRAINT UQ_meta_ColumnMap UNIQUE (EntityId, TargetAttribute)");
+            sb.AppendLine("    );");
+            sb.AppendLine("END");
+            sb.AppendLine("GO");
+            sb.AppendLine();
+        }
+
+        /// <summary>
+        /// Writes the incoming rows into temp tables. INSERT ... VALUES caps at 1000 rows per
+        /// statement, so the rows are emitted in batches.
+        /// </summary>
+        private void AppendMetadataStaging(StringBuilder sb, List<string> entityRows, List<string> columnRows)
+        {
+            const int batch = 500;
+
+            sb.AppendLine("CREATE TABLE #Entity (");
+            sb.AppendLine("    Wave           SMALLINT NOT NULL,");
+            sb.AppendLine("    PassNo         TINYINT  NOT NULL,");
+            sb.AppendLine("    LogicalName    NVARCHAR(128) NOT NULL,");
+            sb.AppendLine("    StagingTable   NVARCHAR(256) NOT NULL,");
+            sb.AppendLine("    GuidTable      NVARCHAR(256) NOT NULL,");
+            sb.AppendLine("    PrimaryIdField NVARCHAR(128) NOT NULL,");
+            sb.AppendLine("    LegacyIdField  NVARCHAR(128) NULL,");
+            sb.AppendLine("    IsEnabled      BIT NOT NULL,");
+            sb.AppendLine("    PRIMARY KEY (LogicalName, PassNo)");
+            sb.AppendLine(");");
+            sb.AppendLine();
+            sb.AppendLine("CREATE TABLE #ColumnMap (");
+            sb.AppendLine("    LogicalName        NVARCHAR(128) NOT NULL,");
+            sb.AppendLine("    PassNo             TINYINT  NOT NULL,");
+            sb.AppendLine("    StagingColumn      NVARCHAR(128) NOT NULL,");
+            sb.AppendLine("    TargetAttribute    NVARCHAR(128) NOT NULL,");
+            sb.AppendLine("    SsisDataType       VARCHAR(20)   NOT NULL,");
+            sb.AppendLine("    MaxLength          INT     NULL,");
+            sb.AppendLine("    NumericPrecision   TINYINT NULL,");
+            sb.AppendLine("    NumericScale       TINYINT NULL,");
+            sb.AppendLine("    IncludeOnCreate    BIT NOT NULL,");
+            sb.AppendLine("    IncludeOnUpdate    BIT NOT NULL,");
+            sb.AppendLine("    IsLookup           BIT NOT NULL,");
+            sb.AppendLine("    LookupTargetEntity NVARCHAR(128) NULL,");
+            sb.AppendLine("    SortOrder          INT NOT NULL,");
+            sb.AppendLine("    PRIMARY KEY (LogicalName, PassNo, TargetAttribute)");
+            sb.AppendLine(");");
+            sb.AppendLine();
+
+            AppendBatchedInserts(sb, entityRows, batch,
+                "INSERT INTO #Entity (Wave, PassNo, LogicalName, StagingTable, GuidTable, PrimaryIdField, LegacyIdField, IsEnabled) VALUES");
+
+            AppendBatchedInserts(sb, columnRows, batch,
+                "INSERT INTO #ColumnMap (LogicalName, PassNo, StagingColumn, TargetAttribute, SsisDataType, MaxLength, NumericPrecision, NumericScale, IncludeOnCreate, IncludeOnUpdate, IsLookup, LookupTargetEntity, SortOrder) VALUES");
+        }
+
+        private static void AppendBatchedInserts(StringBuilder sb, List<string> rows, int batch, string insertHeader)
+        {
+            for (var offset = 0; offset < rows.Count; offset += batch)
+            {
+                var slice = rows.Skip(offset).Take(batch).ToList();
+                sb.AppendLine(insertHeader);
+                sb.AppendLine(string.Join("," + Environment.NewLine, slice) + ";");
+                sb.AppendLine();
+            }
+        }
+
+        private void AppendMetadataMerge(StringBuilder sb)
+        {
+            sb.AppendLine("MERGE meta.Entity AS tgt");
+            sb.AppendLine("USING #Entity AS src");
+            sb.AppendLine("   ON tgt.LogicalName = src.LogicalName");
+            sb.AppendLine("  AND tgt.PassNo      = src.PassNo");
+            sb.AppendLine("WHEN MATCHED THEN UPDATE SET");
+            sb.AppendLine("        tgt.Wave           = src.Wave,");
+            sb.AppendLine("        tgt.StagingTable   = src.StagingTable,");
+            sb.AppendLine("        tgt.GuidTable      = src.GuidTable,");
+            sb.AppendLine("        tgt.PrimaryIdField = src.PrimaryIdField,");
+            sb.AppendLine("        tgt.LegacyIdField  = src.LegacyIdField");
+            sb.AppendLine("WHEN NOT MATCHED BY TARGET THEN");
+            sb.AppendLine("    INSERT (Wave, PassNo, LogicalName, StagingTable, GuidTable, PrimaryIdField, LegacyIdField, IsEnabled)");
+            sb.AppendLine("    VALUES (src.Wave, src.PassNo, src.LogicalName, src.StagingTable, src.GuidTable,");
+            sb.AppendLine("            src.PrimaryIdField, src.LegacyIdField, src.IsEnabled);");
+            sb.AppendLine();
+            sb.AppendLine("MERGE meta.ColumnMap AS tgt");
+            sb.AppendLine("USING (");
+            sb.AppendLine("    SELECT  e.EntityId,");
+            sb.AppendLine("            c.StagingColumn,");
+            sb.AppendLine("            c.TargetAttribute,");
+            sb.AppendLine("            c.SsisDataType,");
+            sb.AppendLine("            c.MaxLength,");
+            sb.AppendLine("            c.NumericPrecision,");
+            sb.AppendLine("            c.NumericScale,");
+            sb.AppendLine("            c.IncludeOnCreate,");
+            sb.AppendLine("            c.IncludeOnUpdate,");
+            sb.AppendLine("            c.IsLookup,");
+            sb.AppendLine("            c.LookupTargetEntity,");
+            sb.AppendLine("            c.SortOrder");
+            sb.AppendLine("    FROM    #ColumnMap AS c");
+            sb.AppendLine("    JOIN    meta.Entity AS e");
+            sb.AppendLine("            ON e.LogicalName = c.LogicalName AND e.PassNo = c.PassNo");
+            sb.AppendLine(") AS src");
+            sb.AppendLine("   ON tgt.EntityId        = src.EntityId");
+            sb.AppendLine("  AND tgt.TargetAttribute = src.TargetAttribute");
+            sb.AppendLine("WHEN MATCHED THEN UPDATE SET");
+            sb.AppendLine("        tgt.StagingColumn      = src.StagingColumn,");
+            sb.AppendLine("        tgt.SsisDataType       = src.SsisDataType,");
+            sb.AppendLine("        tgt.MaxLength          = src.MaxLength,");
+            sb.AppendLine("        tgt.NumericPrecision   = src.NumericPrecision,");
+            sb.AppendLine("        tgt.NumericScale       = src.NumericScale,");
+            sb.AppendLine("        tgt.IsLookup           = src.IsLookup,");
+            sb.AppendLine("        tgt.LookupTargetEntity = src.LookupTargetEntity,");
+            sb.AppendLine("        tgt.SortOrder          = src.SortOrder");
+            sb.AppendLine("WHEN NOT MATCHED BY TARGET THEN");
+            sb.AppendLine("    INSERT (EntityId, StagingColumn, TargetAttribute, SsisDataType, MaxLength,");
+            sb.AppendLine("            NumericPrecision, NumericScale, IncludeOnCreate, IncludeOnUpdate,");
+            sb.AppendLine("            IsLookup, LookupTargetEntity, SortOrder)");
+            sb.AppendLine("    VALUES (src.EntityId, src.StagingColumn, src.TargetAttribute, src.SsisDataType, src.MaxLength,");
+            sb.AppendLine("            src.NumericPrecision, src.NumericScale, src.IncludeOnCreate, src.IncludeOnUpdate,");
+            sb.AppendLine("            src.IsLookup, src.LookupTargetEntity, src.SortOrder)");
+            sb.AppendLine("WHEN NOT MATCHED BY SOURCE");
+            sb.AppendLine("     AND tgt.EntityId IN (SELECT e.EntityId");
+            sb.AppendLine("                          FROM   meta.Entity AS e");
+            sb.AppendLine("                          JOIN   #Entity AS x");
+            sb.AppendLine("                                 ON x.LogicalName = e.LogicalName AND x.PassNo = e.PassNo)");
+            sb.AppendLine("     THEN DELETE;");
+            sb.AppendLine();
+            sb.AppendLine("DROP TABLE #ColumnMap;");
+            sb.AppendLine("DROP TABLE #Entity;");
+            sb.AppendLine("GO");
         }
 
         // ---------------------------------------------------------------- data dictionary

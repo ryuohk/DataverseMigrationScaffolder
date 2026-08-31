@@ -41,9 +41,9 @@ namespace DataverseMigrationScaffolder
         private bool _suppressSolutionEvent;
 
         // UI
-        private ToolStrip _toolStrip;
-        private ToolStripComboBox _cboSolution;
-        private ToolStripLabel _lblOutputFolder;
+        private ToolTip _tip;
+        private ComboBox _cboSolution;
+        private Label _lblOutputFolder;
         private TextBox _txtFilter;
         private ComboBox _cboCategory;
         private CheckBox _chkCheckedOnly;
@@ -63,6 +63,7 @@ namespace DataverseMigrationScaffolder
         private CheckBox _chkManifest;
         private CheckBox _chkMermaid;
         private CheckBox _chkJsonManifest;
+        private CheckBox _chkMetaSeed;
         private DataGridView _grid;
         private ListBox _lstFiles;
         private TextBox _txtPreview;
@@ -96,69 +97,69 @@ namespace DataverseMigrationScaffolder
             Name = "MainControl";
             Size = new Size(1320, 720);
 
-            // ---- Row 1: actions ----------------------------------------------------
-            _toolStrip = new ToolStrip { GripStyle = ToolStripGripStyle.Hidden };
+            _tip = new ToolTip { AutoPopDelay = 15000 };   // some of these take more than 5 seconds to read
 
-            var tsbLoadTables = new ToolStripButton("Load Tables") { DisplayStyle = ToolStripItemDisplayStyle.Text, ToolTipText = "Retrieve the table and solution lists from the connected environment (also clears the session metadata cache)" };
-            tsbLoadTables.Click += (s, e) => ExecuteMethod(LoadTables);
+            // ---- Band 1: steps 1 and 2 ----------------------------------------------
+            var pnlSteps12 = new Panel { Dock = DockStyle.Top, Height = 74 };
 
-            _cboSolution = new ToolStripComboBox
+            var grpStep1 = new GroupBox
             {
-                DropDownStyle = ComboBoxStyle.DropDownList,
-                Width = 240,
-                ToolTipText = "Tables and fields are filtered to this solution's components (Default = everything)"
+                Text = "Step 1  -  Load tables from the connected environment",
+                Location = new Point(8, 2),
+                Size = new Size(566, 66)
+            };
+
+            var btnLoadTables = NewStepButton("Load Tables", new Point(12, 24), new Size(122, 30));
+            btnLoadTables.Click += (s, e) => ExecuteMethod(LoadTables);
+
+            var lblSolution = new Label { Text = "Solution:", Location = new Point(146, 32), AutoSize = true };
+            _cboSolution = new ComboBox
+            {
+                Location = new Point(202, 28),
+                Width = 226,
+                DropDownStyle = ComboBoxStyle.DropDownList
             };
             _cboSolution.SelectedIndexChanged += (s, e) => OnSolutionSelectionChanged();
 
-            var tsbExclusions = new ToolStripButton("Dependency Exclusions") { DisplayStyle = ToolStripItemDisplayStyle.Text, AutoSize = true, ToolTipText = "Field names whose lookups are ignored when ranking tables by dependency" };
-            tsbExclusions.Click += (s, e) => EditDependencyExclusions();
-
-            var tsbOutputFolder = new ToolStripButton("Set Output Folder") { DisplayStyle = ToolStripItemDisplayStyle.Text, AutoSize = true, ToolTipText = "Choose where generated files are written - without an output folder, generation is preview-only" };
-            tsbOutputFolder.Click += (s, e) => PickOutputFolder();
-
-            _lblOutputFolder = new ToolStripLabel("(no output folder - preview only)") { ForeColor = Color.DimGray };
-
-            _toolStrip.Items.AddRange(new ToolStripItem[]
+            var btnExclusions = new Button
             {
-                tsbLoadTables,
-                new ToolStripSeparator(),
-                new ToolStripLabel("Solution:"), _cboSolution,
-                new ToolStripSeparator(),
-                tsbExclusions,
-                new ToolStripSeparator(),
-                tsbOutputFolder, _lblOutputFolder
-            });
-
-            // ---- Row 2: filters + options + generate -------------------------------
-            var pnlOptions = new Panel { Dock = DockStyle.Top, Height = 44 };
-
-            var lblFilter = new Label { Text = "Filter:", Location = new Point(10, 14), AutoSize = true };
-            _txtFilter = new TextBox { Location = new Point(52, 11), Width = 170 };
-
-            var lblCategory = new Label { Text = "Category:", Location = new Point(238, 14), AutoSize = true };
-            _cboCategory = new ComboBox
-            {
-                Location = new Point(298, 10),
-                Width = 90,
-                DropDownStyle = ComboBoxStyle.DropDownList
+                Text = "Dependency Exclusions...",
+                Location = new Point(436, 27),
+                Size = new Size(118, 26),
+                FlatStyle = FlatStyle.System
             };
-            _cboCategory.Items.Add("All");   // real prefixes are added after Load Tables
-            _cboCategory.SelectedIndex = 0;
+            btnExclusions.Click += (s, e) => EditDependencyExclusions();
 
-            _chkCheckedOnly = new CheckBox { Text = "Checked only", Location = new Point(400, 13), AutoSize = true };
+            grpStep1.Controls.AddRange(new Control[] { btnLoadTables, lblSolution, _cboSolution, btnExclusions });
 
-            var lblSchema = new Label { Text = "Schema:", Location = new Point(510, 14), AutoSize = true };
-            _txtSchema = new TextBox { Location = new Point(564, 11), Width = 55 };
-
-            var lblBatch = new Label { Text = "Batch:", Location = new Point(632, 14), AutoSize = true };
-            _numBatch = new NumericUpDown
+            var grpStep2 = new GroupBox
             {
-                Location = new Point(674, 11),
-                Width = 55,
-                Minimum = 1,
-                Maximum = 500,
-                Value = 40
+                Text = "Step 2  -  Set the output folder",
+                Location = new Point(582, 2),
+                Size = new Size(716, 66),
+                Anchor = AnchorStyles.Top | AnchorStyles.Left | AnchorStyles.Right
             };
+
+            var btnOutputFolder = NewStepButton("Set Output Folder", new Point(12, 24), new Size(146, 30));
+            btnOutputFolder.Click += (s, e) => PickOutputFolder();
+
+            _lblOutputFolder = new Label
+            {
+                Text = "(no output folder - preview only)",
+                Location = new Point(168, 32),
+                AutoSize = true,
+                ForeColor = Color.DimGray
+            };
+
+            grpStep2.Controls.AddRange(new Control[] { btnOutputFolder, _lblOutputFolder });
+
+            pnlSteps12.Controls.Add(grpStep1);
+            pnlSteps12.Controls.Add(grpStep2);
+
+            // ---- Band 2: step 3 (choices) and step 4 (generate) ----------------------
+            var pnlSteps34 = new Panel { Dock = DockStyle.Top, Height = 120, Padding = new Padding(8, 2, 8, 6) };
+
+            var pnlGenerate = new Panel { Dock = DockStyle.Right, Width = 190, Padding = new Padding(14, 18, 0, 4) };
 
             _btnGenerate = new Button
             {
@@ -167,79 +168,139 @@ namespace DataverseMigrationScaffolder
                 BackColor = Color.FromArgb(0, 120, 215),
                 ForeColor = Color.White,
                 FlatStyle = FlatStyle.Flat,
-                Size = new Size(170, 32),
-                Location = new Point(750, 6)
+                Dock = DockStyle.Fill
             };
             _btnGenerate.FlatAppearance.BorderSize = 0;
             _btnGenerate.Click += (s, e) => ExecuteMethod(GenerateScripts);
 
-            pnlOptions.Controls.AddRange(new Control[]
+            var lblStep4 = new Label
+            {
+                Text = "Step 4",
+                Dock = DockStyle.Top,
+                Height = 16,
+                Font = new Font(Font, FontStyle.Bold),
+                ForeColor = Color.FromArgb(0, 84, 153)
+            };
+
+            pnlGenerate.Controls.Add(_btnGenerate);
+            pnlGenerate.Controls.Add(lblStep4);
+            _btnGenerate.BringToFront();
+
+            var grpStep3 = new GroupBox
+            {
+                Text = "Step 3  -  Filter the table list and choose the outputs",
+                Dock = DockStyle.Fill
+            };
+
+            // Row 1: grid filters and SQL options
+            var lblFilter = new Label { Text = "Filter:", Location = new Point(10, 27), AutoSize = true };
+            _txtFilter = new TextBox { Location = new Point(52, 24), Width = 160 };
+
+            var lblCategory = new Label { Text = "Category:", Location = new Point(224, 27), AutoSize = true };
+            _cboCategory = new ComboBox
+            {
+                Location = new Point(286, 23),
+                Width = 90,
+                DropDownStyle = ComboBoxStyle.DropDownList
+            };
+            _cboCategory.Items.Add("All");   // real prefixes are added after Load Tables
+            _cboCategory.SelectedIndex = 0;
+
+            _chkCheckedOnly = new CheckBox { Text = "Checked only", Location = new Point(388, 26), AutoSize = true };
+
+            var lblSchema = new Label { Text = "Schema:", Location = new Point(500, 27), AutoSize = true };
+            _txtSchema = new TextBox { Location = new Point(556, 24), Width = 55 };
+
+            var lblBatch = new Label { Text = "Batch:", Location = new Point(625, 27), AutoSize = true };
+            _numBatch = new NumericUpDown
+            {
+                Location = new Point(669, 24),
+                Width = 55,
+                Minimum = 1,
+                Maximum = 500,
+                Value = 40
+            };
+
+            // Row 2: table scripts
+            var lblTableScripts = new Label
+            {
+                Text = "Table scripts:",
+                Location = new Point(10, 56),
+                AutoSize = true,
+                ForeColor = Color.DimGray
+            };
+
+            _chkStaging = new CheckBox { Text = "Staging", Location = new Point(96, 55), AutoSize = true, Checked = true };
+            _txtStagingPrefix = new TextBox { Location = new Point(166, 52), Width = 62 };
+            _cboStagingMode = NewModeCombo(new Point(232, 52));
+
+            _chkGuid = new CheckBox { Text = "GUID", Location = new Point(374, 55), AutoSize = true, Checked = true };
+            _txtGuidPrefix = new TextBox { Location = new Point(430, 52), Width = 62 };
+            _cboGuidMode = NewModeCombo(new Point(496, 52));
+
+            var lblMatchKey = new Label { Text = "Match key:", Location = new Point(640, 56), AutoSize = true };
+            _txtMatchKey = new TextBox { Location = new Point(708, 52), Width = 84 };
+
+            _chkIndexes = new CheckBox { Text = "Index match keys", Location = new Point(802, 55), AutoSize = true };
+
+            // Row 3: extra outputs
+            var lblExtras = new Label
+            {
+                Text = "Extra outputs:",
+                Location = new Point(10, 85),
+                AutoSize = true,
+                ForeColor = Color.DimGray
+            };
+
+            _chkTruncate = new CheckBox { Text = "Truncate", Location = new Point(96, 84), AutoSize = true };
+            _chkTeardown = new CheckBox { Text = "Teardown", Location = new Point(174, 84), AutoSize = true };
+            _chkManifest = new CheckBox { Text = "Data dictionary", Location = new Point(258, 84), AutoSize = true };
+            _chkMermaid = new CheckBox { Text = "Mermaid diagram", Location = new Point(372, 84), AutoSize = true };
+            _chkJsonManifest = new CheckBox { Text = "Manifest JSON", Location = new Point(496, 84), AutoSize = true, Checked = true };
+            _chkMetaSeed = new CheckBox { Text = "Harness metadata", Location = new Point(604, 84), AutoSize = true };
+
+            grpStep3.Controls.AddRange(new Control[]
             {
                 lblFilter, _txtFilter, lblCategory, _cboCategory, _chkCheckedOnly,
-                lblSchema, _txtSchema, lblBatch, _numBatch, _btnGenerate
+                lblSchema, _txtSchema, lblBatch, _numBatch,
+                lblTableScripts, _chkStaging, _txtStagingPrefix, _cboStagingMode,
+                _chkGuid, _txtGuidPrefix, _cboGuidMode, lblMatchKey, _txtMatchKey, _chkIndexes,
+                lblExtras, _chkTruncate, _chkTeardown, _chkManifest, _chkMermaid,
+                _chkJsonManifest, _chkMetaSeed
             });
 
-            // ---- Row 3: output options ----------------------------------------------
-            var pnlOutput = new Panel { Dock = DockStyle.Top, Height = 58 };
+            pnlSteps34.Controls.Add(grpStep3);
+            pnlSteps34.Controls.Add(pnlGenerate);
+            grpStep3.BringToFront();   // index 0 docks last, so Fill claims what Right leaves
 
-            var grpTables = new GroupBox { Text = "Table scripts", Location = new Point(8, 2), Size = new Size(880, 52) };
+            // ---- Tooltips -------------------------------------------------------------
+            _tip.SetToolTip(btnLoadTables, "Retrieve the table and solution lists from the connected environment (also clears the session metadata cache)");
+            _tip.SetToolTip(_cboSolution, "Tables and fields are filtered to this solution's components (Default = everything)");
+            _tip.SetToolTip(btnExclusions, "Field names whose lookups are ignored when ranking tables by dependency");
+            _tip.SetToolTip(btnOutputFolder, "Choose where generated files are written - without an output folder, generation is preview-only");
+            _tip.SetToolTip(_lblOutputFolder, "Generated files are written here");
 
-            _chkStaging = new CheckBox { Text = "Staging", Location = new Point(10, 20), AutoSize = true, Checked = true };
-            _txtStagingPrefix = new TextBox { Location = new Point(80, 17), Width = 65, Text = "stage_" };
-            _cboStagingMode = NewModeCombo(new Point(150, 17));
+            _tip.SetToolTip(_txtStagingPrefix, "Table name prefix, e.g. stage_ or custom_");
+            _tip.SetToolTip(_txtGuidPrefix, "Table name prefix for GUID mapping tables");
+            _tip.SetToolTip(_txtMatchKey, "Comma-separated column-name suffixes identifying match-key columns (carried into guid tables, indexed by 'Index match keys')");
+            _tip.SetToolTip(_chkTruncate, "truncate.sql - truncates all staging tables (guid truncates commented out)");
+            _tip.SetToolTip(_chkTeardown, "teardown.sql - drops all staging tables (guid drops commented out)");
+            _tip.SetToolTip(_chkManifest, "data_dictionary.xlsx - one sheet per table, ordered by display name, plus an index sheet");
+            _tip.SetToolTip(_chkMermaid, "diagram.mmd - Mermaid flowchart of lookup dependencies grouped by tier (render at mermaid.live)");
+            _tip.SetToolTip(_chkJsonManifest, "manifest.json - machine-readable run manifest: tables, tiers, file assignments, columns with types, lookup targets, match keys, cycle members");
+            _tip.SetToolTip(_chkMetaSeed, "meta_seed.sql - populates meta.Entity and meta.ColumnMap, the harness metadata an SSIS package generator reads. Cycle members get a second PassNo = 2 row carrying only their deferred lookups. Rerunnable: structure is refreshed, hand-tuned values are kept");
 
-            _chkGuid = new CheckBox { Text = "GUID", Location = new Point(305, 20), AutoSize = true, Checked = true };
-            _txtGuidPrefix = new TextBox { Location = new Point(360, 17), Width = 65, Text = "guid_" };
-            _cboGuidMode = NewModeCombo(new Point(430, 17));
-
-            var lblMatchKey = new Label { Text = "Match key:", Location = new Point(585, 21), AutoSize = true };
-            _txtMatchKey = new TextBox { Location = new Point(650, 17), Width = 90, Text = "legacyid" };
-
-            _chkIndexes = new CheckBox { Text = "Index match keys", Location = new Point(750, 20), AutoSize = true };
-
-            grpTables.Controls.AddRange(new Control[]
-            {
-                _chkStaging, _txtStagingPrefix, _cboStagingMode,
-                _chkGuid, _txtGuidPrefix, _cboGuidMode,
-                lblMatchKey, _txtMatchKey, _chkIndexes
-            });
-
-            var grpExtras = new GroupBox { Text = "Extra outputs", Location = new Point(898, 2), Size = new Size(410, 52) };
-
-            _chkTruncate = new CheckBox { Text = "Truncate script", Location = new Point(10, 13), AutoSize = true };
-            _chkTeardown = new CheckBox { Text = "Teardown script", Location = new Point(10, 31), AutoSize = true };
-            _chkManifest = new CheckBox { Text = "Data dictionary", Location = new Point(145, 13), AutoSize = true };
-            _chkMermaid = new CheckBox { Text = "Mermaid diagram", Location = new Point(145, 31), AutoSize = true };
-            _chkJsonManifest = new CheckBox { Text = "Manifest JSON", Location = new Point(283, 13), AutoSize = true, Checked = true };
-
-            grpExtras.Controls.AddRange(new Control[] { _chkTruncate, _chkTeardown, _chkManifest, _chkMermaid, _chkJsonManifest });
-
-            var tip = new ToolTip();
-            tip.SetToolTip(_txtStagingPrefix, "Table name prefix, e.g. stage_ or custom_");
-            tip.SetToolTip(_txtGuidPrefix, "Table name prefix for GUID mapping tables");
-            tip.SetToolTip(_txtMatchKey, "Comma-separated column-name suffixes identifying match-key columns (carried into guid tables, indexed by 'Index match keys')");
-            tip.SetToolTip(_chkTruncate, "truncate.sql - truncates all staging tables (guid truncates commented out)");
-            tip.SetToolTip(_chkTeardown, "teardown.sql - drops all staging tables (guid drops commented out)");
-            tip.SetToolTip(_chkManifest, "data_dictionary.xlsx - one sheet per table, ordered by display name, plus an index sheet");
-            tip.SetToolTip(_chkMermaid, "diagram.mmd - Mermaid flowchart of lookup dependencies grouped by tier (render at mermaid.live)");
-            tip.SetToolTip(_chkJsonManifest, "manifest.json - machine-readable run manifest: tables, tiers, file assignments, columns with types, lookup targets, match keys, cycle members");
-
-            // ---- General guidance tooltips ------------------------------------------
-            tip.AutoPopDelay = 15000;   // some of these take more than 5 seconds to read
-            tip.SetToolTip(_txtFilter, "Filter the table grid by logical or display name");
-            tip.SetToolTip(_cboCategory, "Filter by publisher prefix parsed from the logical name (\"oob\" = no prefix / out-of-box)");
-            tip.SetToolTip(_chkCheckedOnly, "Show only the tables currently checked for generation");
-            tip.SetToolTip(_txtSchema, "SQL schema for the generated tables (default: dbo)");
-            tip.SetToolTip(_numBatch, "Maximum tables per .sql file. Files never mix dependency tiers - a tier larger than this splits into parts, a smaller tier gets its own shorter file");
-            tip.SetToolTip(_btnGenerate, "Retrieve metadata for every checked table, rank tables by lookup dependency, and produce the selected outputs");
-            tip.SetToolTip(_chkStaging, "Generate NN_create_staging.sql files: one column per Dataverse attribute, one dependency tier per file");
-            tip.SetToolTip(_cboStagingMode, "Drop & recreate = DROP IF EXISTS + CREATE (rebuild at will). Create if missing = existing tables are left untouched");
-            tip.SetToolTip(_chkGuid, "Generate NN_create_guid.sql files: id, primary name, match-key and lookup columns - for resolving legacy keys to Dataverse ids during the load");
-            tip.SetToolTip(_cboGuidMode, "Create if missing (default) protects id mappings accumulated across migration runs; Drop & recreate rebuilds them from scratch");
-            tip.SetToolTip(_chkIndexes, "Add a guarded nonclustered index on every match-key column - speeds up the resolution joins during data loads");
-
-            pnlOutput.Controls.Add(grpTables);
-            pnlOutput.Controls.Add(grpExtras);
+            _tip.SetToolTip(_txtFilter, "Filter the table grid by logical or display name");
+            _tip.SetToolTip(_cboCategory, "Filter by publisher prefix parsed from the logical name (\"oob\" = no prefix / out-of-box)");
+            _tip.SetToolTip(_chkCheckedOnly, "Show only the tables currently checked for generation");
+            _tip.SetToolTip(_txtSchema, "SQL schema for the generated tables (default: dbo)");
+            _tip.SetToolTip(_numBatch, "Maximum tables per .sql file. Files never mix dependency tiers - a tier larger than this splits into parts, a smaller tier gets its own shorter file");
+            _tip.SetToolTip(_btnGenerate, "Retrieve metadata for every checked table, rank tables by lookup dependency, and produce the selected outputs");
+            _tip.SetToolTip(_chkStaging, "Generate NN_create_staging.sql files: one column per Dataverse attribute, one dependency tier per file");
+            _tip.SetToolTip(_cboStagingMode, "Drop & recreate = DROP IF EXISTS + CREATE (rebuild at will). Create if missing = existing tables are left untouched");
+            _tip.SetToolTip(_chkGuid, "Generate NN_create_guid.sql files: id, primary name, match-key and lookup columns - for resolving legacy keys to Dataverse ids during the load");
+            _tip.SetToolTip(_cboGuidMode, "Create if missing (default) protects id mappings accumulated across migration runs; Drop & recreate rebuilds them from scratch");
+            _tip.SetToolTip(_chkIndexes, "Add a guarded nonclustered index on every match-key column - speeds up the resolution joins during data loads");
 
             // ---- Grid ---------------------------------------------------------------
             _grid = new DataGridView
@@ -282,7 +343,7 @@ namespace DataverseMigrationScaffolder
             // ---- Right side: files + preview + warnings ----------------------------
             _lstFiles = new ListBox { Dock = DockStyle.Fill };
             _lstFiles.SelectedIndexChanged += (s, e) => ShowSelectedFile();
-            tip.SetToolTip(_lstFiles, "Files produced by the last generation - select one to preview it below");
+            _tip.SetToolTip(_lstFiles, "Files produced by the last generation - select one to preview it below");
 
             _txtPreview = new TextBox
             {
@@ -330,10 +391,11 @@ namespace DataverseMigrationScaffolder
             _sslOutput = new ToolStripStatusLabel("(no output folder - preview only)") { Spring = true, TextAlign = ContentAlignment.MiddleRight };
             status.Items.AddRange(new ToolStripItem[] { _sslOrg, new ToolStripStatusLabel("|"), _sslChecked, new ToolStripStatusLabel("|"), _sslLast, _sslOutput });
 
+            // Docking resolves in reverse index order, so the Fill control goes in first and
+            // the Top bands follow in reverse visual order (step 1 band added last = topmost).
             Controls.Add(mainSplit);
-            Controls.Add(pnlOutput);
-            Controls.Add(pnlOptions);
-            Controls.Add(_toolStrip);
+            Controls.Add(pnlSteps34);
+            Controls.Add(pnlSteps12);
             Controls.Add(status);
 
             _txtFilter.TextChanged += (s, e) => ApplyFilter();
@@ -360,16 +422,31 @@ namespace DataverseMigrationScaffolder
             {
                 "DATAVERSE MIGRATION SCAFFOLDER - QUICK START",
                 "",
-                "  1. Connect to an environment (top-left of XrmToolBox).",
-                "  2. Click Load Tables to retrieve tables and solutions.",
-                "  3. Pick a Solution to scope tables AND columns to its components",
-                "     (Default = everything; choice is remembered per environment).",
-                "  4. Check the tables to include. The header checkbox toggles every",
-                "     row shown by the current filter. Selections are remembered.",
-                "  5. Choose outputs below: staging / GUID mapping DDL (with editable",
-                "     prefixes and existence handling), plus optional truncate and",
-                "     teardown scripts, Excel data dictionary and Mermaid diagram.",
-                "  6. Set an output folder and click Generate Scripts.",
+                "  Connect to an environment first (top-left of XrmToolBox), then work",
+                "  through the four numbered steps above.",
+                "",
+                "  STEP 1  Load Tables",
+                "     Retrieves tables and solutions from the environment. Then pick a",
+                "     Solution to scope both tables AND columns to its components",
+                "     (Default = everything; the choice is remembered per environment).",
+                "",
+                "  STEP 2  Set Output Folder",
+                "     Where the generated files are written. Without one, generation",
+                "     runs preview-only and nothing reaches disk.",
+                "",
+                "  STEP 3  Filter and choose outputs",
+                "     Check the tables to include in the grid on the left. The header",
+                "     checkbox toggles every row shown by the current filter, and",
+                "     selections are remembered per environment.",
+                "",
+                "     Table scripts   staging and GUID mapping DDL, with editable",
+                "                     prefixes and drop-vs-create handling.",
+                "     Extra outputs   truncate and teardown scripts, Excel data",
+                "                     dictionary, Mermaid diagram, manifest JSON, and",
+                "                     the harness metadata seed (meta.Entity and",
+                "                     meta.ColumnMap) for a package generator.",
+                "",
+                "  STEP 4  Generate Scripts",
                 "",
                 "  Files are batched strictly by dependency tier: everything in a file",
                 "  depends only on tables from the same or earlier files - matching",
@@ -380,12 +457,34 @@ namespace DataverseMigrationScaffolder
             });
         }
 
+        /// <summary>
+        /// Outlined accent button for the two prerequisite steps, so they read as the way in
+        /// without competing with the solid Generate button that ends the flow.
+        /// </summary>
+        private Button NewStepButton(string text, Point location, Size size)
+        {
+            var button = new Button
+            {
+                Text = text,
+                Location = location,
+                Size = size,
+                Font = new Font(Font, FontStyle.Bold),
+                FlatStyle = FlatStyle.Flat,
+                BackColor = Color.White,
+                ForeColor = Color.FromArgb(0, 84, 153),
+                UseVisualStyleBackColor = false
+            };
+            button.FlatAppearance.BorderColor = Color.FromArgb(0, 120, 215);
+            button.FlatAppearance.BorderSize = 1;
+            return button;
+        }
+
         private static ComboBox NewModeCombo(Point location)
         {
             var combo = new ComboBox
             {
                 Location = location,
-                Width = 140,
+                Width = 132,
                 DropDownStyle = ComboBoxStyle.DropDownList
             };
             // ComboBox items render '&' literally (no mnemonic processing), unlike button text.
@@ -564,6 +663,7 @@ namespace DataverseMigrationScaffolder
             _chkManifest.Checked = _settings.GenerateDataDictionary;
             _chkMermaid.Checked = _settings.GenerateMermaid;
             _chkJsonManifest.Checked = _settings.GenerateJsonManifest;
+            _chkMetaSeed.Checked = _settings.GenerateMetadataSeed;
 
             UpdateOutputFolderLabel();
         }
@@ -592,6 +692,7 @@ namespace DataverseMigrationScaffolder
             _settings.GenerateDataDictionary = _chkManifest.Checked;
             _settings.GenerateMermaid = _chkMermaid.Checked;
             _settings.GenerateJsonManifest = _chkJsonManifest.Checked;
+            _settings.GenerateMetadataSeed = _chkMetaSeed.Checked;
         }
 
         public override void ClosingPlugin(PluginCloseInfo info)
@@ -606,9 +707,9 @@ namespace DataverseMigrationScaffolder
             var text = hasFolder ? _settings.OutputFolder : "(no output folder - preview only)";
 
             _sslOutput.Text = text;
-            _lblOutputFolder.Text = hasFolder ? "Output: " + Shorten(text, 60) : text;
-            _lblOutputFolder.ToolTipText = text;
+            _lblOutputFolder.Text = hasFolder ? Shorten(text, 70) : text;
             _lblOutputFolder.ForeColor = hasFolder ? Color.Black : Color.DimGray;
+            if (_tip != null) _tip.SetToolTip(_lblOutputFolder, text);
         }
 
         private static string Shorten(string path, int max)
@@ -694,7 +795,7 @@ namespace DataverseMigrationScaffolder
                         + SystemInformation.VerticalScrollBarWidth;
                 if (w > dropDownWidth) dropDownWidth = w;
             }
-            _cboSolution.ComboBox.DropDownWidth = dropDownWidth;
+            _cboSolution.DropDownWidth = dropDownWidth;
 
             var remembered = _settings.GetSolution(CurrentOrgKey);
             var index = 0;
@@ -853,7 +954,7 @@ namespace DataverseMigrationScaffolder
 
             if (!_settings.GenerateStaging && !_settings.GenerateGuid && !_settings.GenerateTruncateScript &&
                 !_settings.GenerateTeardown && !_settings.GenerateDataDictionary && !_settings.GenerateMermaid &&
-                !_settings.GenerateJsonManifest)
+                !_settings.GenerateJsonManifest && !_settings.GenerateMetadataSeed)
             {
                 MessageBox.Show(this, "Enable at least one output.",
                     "Nothing to generate", MessageBoxButtons.OK, MessageBoxIcon.Information);

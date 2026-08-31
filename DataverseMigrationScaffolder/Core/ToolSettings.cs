@@ -89,6 +89,13 @@ namespace DataverseMigrationScaffolder.Core
         public bool GenerateJsonManifest { get; set; } = true;
 
         /// <summary>
+        /// Emit meta_seed.sql: MERGE statements populating meta.Entity and meta.ColumnMap,
+        /// the metadata an SSIS package generator reads to build the migration harness.
+        /// Cycle members get a second PassNo = 2 row carrying only their deferred lookups.
+        /// </summary>
+        public bool GenerateMetadataSeed { get; set; } = false;
+
+        /// <summary>
         /// Field logical names excluded from dependency ranking on ALL tables
         /// (comma/newline separated). The columns are still emitted; their lookup
         /// targets just don't influence tier ordering.
