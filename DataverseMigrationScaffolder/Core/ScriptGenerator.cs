@@ -12,8 +12,8 @@ namespace DataverseMigrationScaffolder.Core
     /// is split across several files, but tiers are never mixed within one file.
     ///
     /// Output options (settings): staging tables, guid tables, drop-and-recreate vs
-    /// create-if-missing per kind, guarded match-key indexes, truncate and teardown
-    /// scripts, Excel data dictionary, Mermaid diagram, a machine-readable
+    /// create-if-missing per kind, guarded match-key indexes, an Excel data
+    /// dictionary, a machine-readable
     /// manifest.json describing the whole run, and a harness metadata seed script
     /// populating meta.Entity / meta.ColumnMap for a downstream package generator.
     /// </summary>
@@ -89,24 +89,9 @@ namespace DataverseMigrationScaffolder.Core
                 }
             }
 
-            if (_settings.GenerateTruncateScript)
-            {
-                result.Files.Add(BuildTruncate(chunks));
-            }
-
-            if (_settings.GenerateTeardown)
-            {
-                result.Files.Add(BuildTeardown(chunks));
-            }
-
             if (_settings.GenerateDataDictionary)
             {
                 result.Files.Add(BuildDataDictionary(chunks, droppedEdges));
-            }
-
-            if (_settings.GenerateMermaid)
-            {
-                result.Files.Add(BuildMermaid(tiers, droppedEdges));
             }
 
             // Built before the JSON manifest so any warnings it raises (tables with no match
@@ -198,6 +183,16 @@ namespace DataverseMigrationScaffolder.Core
             lines.Add(Tuple.Create("    [owneridtype] NVARCHAR(100)", (string)null));
             lines.Add(Tuple.Create("    [statecode] INT", (string)null));
 
+            // Each legacy record is staged once: the harness matches and records GUIDs by the
+            // legacy id, so a duplicate would be created twice in Dataverse. The constraint's
+            // index also serves the GUID-table joins, so no separate staging index is needed.
+            var matchKeys = table.Columns.Where(c => _settings.IsMatchKey(c.Name)).ToList();
+            foreach (var col in matchKeys)
+            {
+                    lines.Add(Tuple.Create(string.Format("    CONSTRAINT [UQ_{0}{1}_{2}] UNIQUE ([{2}])",
+                        _settings.StagingPrefix, table.SchemaName, col.Name), (string)null));
+            }
+
             if (_settings.StagingDropRecreate)
             {
                     sb.AppendLine(string.Format("DROP TABLE IF EXISTS {0};", fullName));
@@ -213,11 +208,6 @@ namespace DataverseMigrationScaffolder.Core
                     AppendColumnLines(sb, lines, "    ");
                     sb.AppendLine("    );");
                     sb.AppendLine("END");
-            }
-
-            if (_settings.IndexLegacyIdColumns)
-            {
-                    EmitLegacyIdIndexes(sb, fullName, _settings.StagingPrefix + table.SchemaName, table);
             }
         }
 
@@ -275,28 +265,13 @@ namespace DataverseMigrationScaffolder.Core
             var idName = idCol != null ? idCol.Name : table.PrimaryIdAttribute;
             lines.Add(string.Format("        [{0}] VARCHAR(100) NULL", idName));
 
-            // 2. Primary name column.
-            var nameCol = table.Columns.FirstOrDefault(c => c.IsPrimaryName);
-            if (nameCol != null)
-            {
-                    lines.Add(string.Format("        [{0}] {1} NULL", nameCol.Name, nameCol.SqlType));
-            }
-            else if (!string.IsNullOrEmpty(table.PrimaryNameAttribute))
-            {
-                    lines.Add(string.Format("        [{0}] NVARCHAR(100) NULL", table.PrimaryNameAttribute));
-            }
-
-            // 3. Match-key column(s) (configurable suffix, default *legacyid), only if the
-            //    table actually has one in Dataverse.
+            // 2. Match-key column(s) (configurable suffix, default *legacyid), only if the
+            //    table actually has one in Dataverse. A GUID table is only a legacy id -> GUID
+            //    crosswalk: lookups are resolved by joining on these two columns, so nothing
+            //    else (primary name, lookups, state) is stored.
             foreach (var col in table.Columns.Where(c => _settings.IsMatchKey(c.Name)))
             {
                     lines.Add(string.Format("        [{0}] {1} NULL", col.Name, col.SqlType));
-            }
-
-            // 4. Lookup columns (plus polymorphic type companions), alphabetical.
-            foreach (var col in table.Columns.Where(c => c.IsLookup || c.IsTypeCompanion))
-            {
-                    lines.Add(string.Format("        [{0}] NVARCHAR(100) NULL", col.Name));
             }
 
             if (_settings.GuidDropRecreate)
@@ -334,146 +309,6 @@ namespace DataverseMigrationScaffolder.Core
                     indexName, fullName));
                     sb.AppendLine(string.Format("    CREATE NONCLUSTERED INDEX [{0}] ON {1}([{2}]);", indexName, fullName, col.Name));
             }
-        }
-
-        // ---------------------------------------------------------------- teardown
-
-        private GeneratedFile BuildTeardown(List<TierChunk> chunks)
-        {
-            var ordered = chunks.SelectMany(c => c.Tables).ToList();
-            ordered.Reverse();   // drop dependents before their targets, cosmetically
-
-            var sb = new StringBuilder();
-            sb.AppendLine("/*");
-            sb.AppendLine(" * Harness teardown - drops all selected STAGING tables (reverse dependency order).");
-            sb.AppendLine(" * GUID mapping table drops are included but COMMENTED OUT: they hold accumulated");
-            sb.AppendLine(" * legacy-to-Dataverse mappings. Uncomment only if you really mean to lose them.");
-            sb.AppendLine(string.Format(" * Generated by Dataverse Migration Scaffolder on {0:yyyy-MM-dd HH:mm}", DateTime.Now));
-            sb.AppendLine(" */");
-            sb.AppendLine("SET ANSI_NULLS ON;");
-            sb.AppendLine("SET QUOTED_IDENTIFIER ON;");
-            sb.AppendLine();
-            sb.AppendLine("-- Staging tables");
-            foreach (var table in ordered)
-            {
-                    sb.AppendLine(string.Format("DROP TABLE IF EXISTS [{0}].[{1}{2}];", _settings.SchemaName, _settings.StagingPrefix, table.SchemaName));
-            }
-            sb.AppendLine();
-            sb.AppendLine("-- GUID mapping tables (uncomment to drop accumulated mappings)");
-            foreach (var table in ordered)
-            {
-                    sb.AppendLine(string.Format("-- DROP TABLE IF EXISTS [{0}].[{1}{2}];", _settings.SchemaName, _settings.GuidPrefix, table.SchemaName));
-            }
-
-            var file = new GeneratedFile
-            {
-                    FileName = "teardown.sql",
-                    Content = sb.ToString(),
-                    Description = "drops staging tables"
-            };
-            file.Tables.AddRange(ordered.Select(t => t.LogicalName));
-            return file;
-        }
-
-        // ---------------------------------------------------------------- truncate
-
-        private GeneratedFile BuildTruncate(List<TierChunk> chunks)
-        {
-            var ordered = chunks.SelectMany(c => c.Tables).ToList();
-            ordered.Reverse();   // dependents before their targets, matching teardown
-
-            var sb = new StringBuilder();
-            sb.AppendLine("/*");
-            sb.AppendLine(" * Harness reset - truncates all selected STAGING tables (reverse dependency order).");
-            sb.AppendLine(" * GUID mapping table truncates are included but COMMENTED OUT: they hold accumulated");
-            sb.AppendLine(" * legacy-to-Dataverse mappings. Uncomment only if you really mean to lose them.");
-            sb.AppendLine(string.Format(" * Generated by Dataverse Migration Scaffolder on {0:yyyy-MM-dd HH:mm}", DateTime.Now));
-            sb.AppendLine(" */");
-            sb.AppendLine("SET ANSI_NULLS ON;");
-            sb.AppendLine("SET QUOTED_IDENTIFIER ON;");
-            sb.AppendLine();
-            sb.AppendLine("-- Staging tables");
-            foreach (var table in ordered)
-            {
-                    sb.AppendLine(string.Format("TRUNCATE TABLE [{0}].[{1}{2}];", _settings.SchemaName, _settings.StagingPrefix, table.SchemaName));
-            }
-            sb.AppendLine();
-            sb.AppendLine("-- GUID mapping tables (uncomment to empty accumulated mappings)");
-            foreach (var table in ordered)
-            {
-                    sb.AppendLine(string.Format("-- TRUNCATE TABLE [{0}].[{1}{2}];", _settings.SchemaName, _settings.GuidPrefix, table.SchemaName));
-            }
-
-            var file = new GeneratedFile
-            {
-                    FileName = "truncate.sql",
-                    Content = sb.ToString(),
-                    Description = "truncates staging tables"
-            };
-            file.Tables.AddRange(ordered.Select(t => t.LogicalName));
-            return file;
-        }
-
-        // ---------------------------------------------------------------- mermaid diagram
-
-        /// <summary>
-        /// Mermaid flowchart: nodes grouped into subgraphs by dependency tier, solid arrows
-        /// pointing at the lookup TARGET (load the target first), dashed arrows for edges
-        /// dropped to break cycles (resolve with a deferred update pass).
-        /// </summary>
-        private GeneratedFile BuildMermaid(List<List<TableModel>> tiers, Dictionary<string, HashSet<string>> droppedEdges)
-        {
-            var selected = new HashSet<string>(
-                    tiers.SelectMany(t => t).Select(t => t.LogicalName.ToLowerInvariant()));
-
-            var sb = new StringBuilder();
-            sb.AppendLine("%% Dataverse Migration Scaffolder - dependency diagram");
-            sb.AppendLine(string.Format("%% Generated by Dataverse Migration Scaffolder on {0:yyyy-MM-dd HH:mm}", DateTime.Now));
-            sb.AppendLine("%% Solid arrow: lookup dependency (points at the target - load the target first).");
-            sb.AppendLine("%% Dashed arrow: dropped to break a cycle - resolve with a deferred update pass.");
-            sb.AppendLine("%% Render at mermaid.live, or paste into a GitHub/Azure DevOps markdown file.");
-            sb.AppendLine("flowchart TD");
-
-            for (var tierIndex = 0; tierIndex < tiers.Count; tierIndex++)
-            {
-                    sb.AppendLine(string.Format("    subgraph tier{0}[\"Tier {0}\"]", tierIndex));
-                    foreach (var table in tiers[tierIndex])
-                    {
-                    sb.AppendLine(string.Format("        {0}[\"{1}\"]",
-                        table.LogicalName, MermaidLabel(table)));
-                    }
-                    sb.AppendLine("    end");
-            }
-
-            var emitted = new HashSet<string>();
-            foreach (var table in tiers.SelectMany(t => t))
-            {
-                    HashSet<string> dropped;
-                    droppedEdges.TryGetValue(table.LogicalName.ToLowerInvariant(), out dropped);
-
-                    foreach (var dep in table.Dependencies.Where(d => selected.Contains(d)).OrderBy(d => d))
-                    {
-                    var isDropped = dropped != null && dropped.Contains(dep);
-                    var edge = string.Format("    {0} {1} {2}", table.LogicalName, isDropped ? "-.->" : "-->", dep);
-                    if (emitted.Add(edge)) sb.AppendLine(edge);
-                    }
-            }
-
-            var file = new GeneratedFile
-            {
-                    FileName = "diagram.mmd",
-                    Content = sb.ToString(),
-                    Description = "Mermaid dependency diagram"
-            };
-            file.Tables.AddRange(tiers.SelectMany(t => t).Select(t => t.LogicalName));
-            return file;
-        }
-
-        private static string MermaidLabel(TableModel table)
-        {
-            var display = (table.DisplayName ?? table.LogicalName)
-                    .Replace("\"", "'").Replace("[", "(").Replace("]", ")");
-            return display + "<br/><small>" + table.LogicalName + "</small>";
         }
 
         // ---------------------------------------------------------------- json manifest

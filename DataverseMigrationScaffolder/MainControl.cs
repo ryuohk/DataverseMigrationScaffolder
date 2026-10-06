@@ -50,20 +50,12 @@ namespace DataverseMigrationScaffolder
         private TextBox _txtSchema;
         private NumericUpDown _numBatch;
         private Button _btnGenerate;
-        private CheckBox _chkStaging;
-        private CheckBox _chkGuid;
         private TextBox _txtStagingPrefix;
         private TextBox _txtGuidPrefix;
         private TextBox _txtMatchKey;
         private ComboBox _cboStagingMode;
         private ComboBox _cboGuidMode;
-        private CheckBox _chkTruncate;
         private CheckBox _chkIndexes;
-        private CheckBox _chkTeardown;
-        private CheckBox _chkManifest;
-        private CheckBox _chkMermaid;
-        private CheckBox _chkJsonManifest;
-        private CheckBox _chkMetaSeed;
         private DataGridView _grid;
         private ListBox _lstFiles;
         private TextBox _txtPreview;
@@ -97,7 +89,7 @@ namespace DataverseMigrationScaffolder
             Name = "MainControl";
             Size = new Size(1320, 720);
 
-            _tip = new ToolTip { AutoPopDelay = 15000 };   // some of these take more than 5 seconds to read
+            _tip = Tips.New();
 
             // ---- Band 1: steps 1 and 2 ----------------------------------------------
             var pnlSteps12 = new Panel { Dock = DockStyle.Top, Height = 74 };
@@ -159,11 +151,11 @@ namespace DataverseMigrationScaffolder
             // ---- Band 2: step 3 (choices) and step 4 (generate) ----------------------
             var pnlSteps34 = new Panel { Dock = DockStyle.Top, Height = 120, Padding = new Padding(8, 2, 8, 6) };
 
-            var pnlGenerate = new Panel { Dock = DockStyle.Right, Width = 190, Padding = new Padding(14, 18, 0, 4) };
+            var pnlGenerate = new Panel { Dock = DockStyle.Right, Width = 220, Padding = new Padding(14, 18, 0, 4) };
 
             _btnGenerate = new Button
             {
-                Text = "Generate Scripts",
+                Text = "Generate SSIS Project",
                 Font = new Font(Font, FontStyle.Bold),
                 BackColor = Color.FromArgb(0, 120, 215),
                 ForeColor = Color.White,
@@ -171,7 +163,7 @@ namespace DataverseMigrationScaffolder
                 Dock = DockStyle.Fill
             };
             _btnGenerate.FlatAppearance.BorderSize = 0;
-            _btnGenerate.Click += (s, e) => ExecuteMethod(GenerateScripts);
+            _btnGenerate.Click += (s, e) => ExecuteMethod(GenerateSsisProject);
 
             var lblStep4 = new Label
             {
@@ -183,90 +175,89 @@ namespace DataverseMigrationScaffolder
             };
 
             pnlGenerate.Controls.Add(_btnGenerate);
+            var secondary = new TableLayoutPanel { Dock = DockStyle.Bottom, Height = 32, ColumnCount = 2, Padding = new Padding(0, 4, 0, 0) };
+            secondary.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+            secondary.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 50));
+            var btnExport = new Button { Text = "Export  \u25BE", Dock = DockStyle.Fill, Margin = new Padding(0, 0, 2, 0) };
+            var exportMenu = new ContextMenuStrip { ShowItemToolTips = true };
+            exportMenu.Items.Add("SQL scripts (staging and GUID tables)", null, (s, e) => ExecuteMethod(() => Export(ExportKind.SqlScripts)))
+                .ToolTipText = Tips.Wrap("Saves the CREATE TABLE scripts for the checked tables: NN_create_staging.sql and "
+                    + "NN_create_guid.sql, one file per dependency tier (01 first). Run them in number order to build the "
+                    + "staging and GUID tables yourself, for example on a new SQL Server.");
+            exportMenu.Items.Add("Data dictionary (Excel)", null, (s, e) => ExecuteMethod(() => Export(ExportKind.DataDictionary)))
+                .ToolTipText = Tips.Wrap("Saves data_dictionary.xlsx: one sheet per checked table (ordered by display name) listing "
+                    + "every column's logical name, display name, type, lookup targets, description and SQL type, plus a "
+                    + "~Tables sheet with each table's tier and file. Useful for mapping legacy columns with the business.");
+            exportMenu.Items.Add("Scaffolder run (manifest, scripts, metadata seed)", null, (s, e) => ExecuteMethod(() => Export(ExportKind.ScaffolderRun)))
+                .ToolTipText = Tips.Wrap("Saves everything an SSIS project is built from: the SQL scripts, manifest.json (tables, "
+                    + "tiers, columns and lookups) and meta_seed.sql (harness metadata). Use it to build or rebuild a project "
+                    + "later without connecting to Dataverse: SSIS Settings... > A previous scaffolder run.");
+            btnExport.Click += (s, e) => exportMenu.Show(btnExport, new Point(0, btnExport.Height));
+            var btnSsisSettings = new Button { Text = "SSIS Settings...", Dock = DockStyle.Fill, Margin = new Padding(2, 0, 0, 0) };
+            btnSsisSettings.Click += (s, e) => OpenSsisSettings();
+            secondary.Controls.Add(btnExport, 0, 0);
+            secondary.Controls.Add(btnSsisSettings, 1, 0);
+            pnlGenerate.Controls.Add(secondary);
             pnlGenerate.Controls.Add(lblStep4);
             _btnGenerate.BringToFront();
 
             var grpStep3 = new GroupBox
             {
-                Text = "Step 3  -  Filter the table list and choose the outputs",
+                Text = "Step 3  -  Choose the tables and how they are built",
                 Dock = DockStyle.Fill
             };
 
-            // Row 1: grid filters and SQL options
-            var lblFilter = new Label { Text = "Filter:", Location = new Point(10, 27), AutoSize = true };
-            _txtFilter = new TextBox { Location = new Point(52, 24), Width = 160 };
+            // Row 1: which tables are listed
+            var lblList = NewRowLabel("Table list:", 27);
+            var lblFilter = new Label { Text = "Filter:", Location = new Point(96, 27), AutoSize = true };
+            _txtFilter = new TextBox { Location = new Point(138, 24), Width = 180 };
 
-            var lblCategory = new Label { Text = "Category:", Location = new Point(224, 27), AutoSize = true };
+            var lblCategory = new Label { Text = "Category:", Location = new Point(332, 27), AutoSize = true };
             _cboCategory = new ComboBox
             {
-                Location = new Point(286, 23),
+                Location = new Point(394, 23),
                 Width = 90,
                 DropDownStyle = ComboBoxStyle.DropDownList
             };
             _cboCategory.Items.Add("All");   // real prefixes are added after Load Tables
             _cboCategory.SelectedIndex = 0;
 
-            _chkCheckedOnly = new CheckBox { Text = "Checked only", Location = new Point(388, 26), AutoSize = true };
+            _chkCheckedOnly = new CheckBox { Text = "Checked only", Location = new Point(498, 26), AutoSize = true };
 
-            var lblSchema = new Label { Text = "Schema:", Location = new Point(500, 27), AutoSize = true };
-            _txtSchema = new TextBox { Location = new Point(556, 24), Width = 55 };
+            // Row 2: staging tables, and where all tables go
+            var lblStaging = NewRowLabel("Staging tables:", 56);
+            var lblStagingPrefix = new Label { Text = "Prefix:", Location = new Point(96, 56), AutoSize = true };
+            _txtStagingPrefix = new TextBox { Location = new Point(138, 52), Width = 62 };
+            _cboStagingMode = NewModeCombo(new Point(206, 52));
 
-            var lblBatch = new Label { Text = "Batch:", Location = new Point(625, 27), AutoSize = true };
+            var lblSchema = new Label { Text = "Schema:", Location = new Point(362, 56), AutoSize = true };
+            _txtSchema = new TextBox { Location = new Point(418, 52), Width = 55 };
+
+            var lblBatch = new Label { Text = "Tables per file:", Location = new Point(490, 56), AutoSize = true };
             _numBatch = new NumericUpDown
             {
-                Location = new Point(669, 24),
+                Location = new Point(578, 52),
                 Width = 55,
                 Minimum = 1,
                 Maximum = 500,
                 Value = 40
             };
 
-            // Row 2: table scripts
-            var lblTableScripts = new Label
-            {
-                Text = "Table scripts:",
-                Location = new Point(10, 56),
-                AutoSize = true,
-                ForeColor = Color.DimGray
-            };
+            // Row 3: GUID tables and the legacy match key they record
+            var lblGuid = NewRowLabel("GUID tables:", 85);
+            var lblGuidPrefix = new Label { Text = "Prefix:", Location = new Point(96, 85), AutoSize = true };
+            _txtGuidPrefix = new TextBox { Location = new Point(138, 82), Width = 62 };
+            _cboGuidMode = NewModeCombo(new Point(206, 82));
 
-            _chkStaging = new CheckBox { Text = "Staging", Location = new Point(96, 55), AutoSize = true, Checked = true };
-            _txtStagingPrefix = new TextBox { Location = new Point(166, 52), Width = 62 };
-            _cboStagingMode = NewModeCombo(new Point(232, 52));
-
-            _chkGuid = new CheckBox { Text = "GUID", Location = new Point(374, 55), AutoSize = true, Checked = true };
-            _txtGuidPrefix = new TextBox { Location = new Point(430, 52), Width = 62 };
-            _cboGuidMode = NewModeCombo(new Point(496, 52));
-
-            var lblMatchKey = new Label { Text = "Match key:", Location = new Point(640, 56), AutoSize = true };
-            _txtMatchKey = new TextBox { Location = new Point(708, 52), Width = 84 };
-
-            _chkIndexes = new CheckBox { Text = "Index match keys", Location = new Point(802, 55), AutoSize = true };
-
-            // Row 3: extra outputs
-            var lblExtras = new Label
-            {
-                Text = "Extra outputs:",
-                Location = new Point(10, 85),
-                AutoSize = true,
-                ForeColor = Color.DimGray
-            };
-
-            _chkTruncate = new CheckBox { Text = "Truncate", Location = new Point(96, 84), AutoSize = true };
-            _chkTeardown = new CheckBox { Text = "Teardown", Location = new Point(174, 84), AutoSize = true };
-            _chkManifest = new CheckBox { Text = "Data dictionary", Location = new Point(258, 84), AutoSize = true };
-            _chkMermaid = new CheckBox { Text = "Mermaid diagram", Location = new Point(372, 84), AutoSize = true };
-            _chkJsonManifest = new CheckBox { Text = "Manifest JSON", Location = new Point(496, 84), AutoSize = true, Checked = true };
-            _chkMetaSeed = new CheckBox { Text = "Harness metadata", Location = new Point(604, 84), AutoSize = true };
+            var lblMatchKey = new Label { Text = "Match key:", Location = new Point(362, 85), AutoSize = true };
+            _txtMatchKey = new TextBox { Location = new Point(430, 82), Width = 84 };
+            _chkIndexes = new CheckBox { Text = "Index match keys", Location = new Point(528, 84), AutoSize = true };
 
             grpStep3.Controls.AddRange(new Control[]
             {
-                lblFilter, _txtFilter, lblCategory, _cboCategory, _chkCheckedOnly,
-                lblSchema, _txtSchema, lblBatch, _numBatch,
-                lblTableScripts, _chkStaging, _txtStagingPrefix, _cboStagingMode,
-                _chkGuid, _txtGuidPrefix, _cboGuidMode, lblMatchKey, _txtMatchKey, _chkIndexes,
-                lblExtras, _chkTruncate, _chkTeardown, _chkManifest, _chkMermaid,
-                _chkJsonManifest, _chkMetaSeed
+                lblList, lblFilter, _txtFilter, lblCategory, _cboCategory, _chkCheckedOnly,
+                lblStaging, lblStagingPrefix, _txtStagingPrefix, _cboStagingMode, lblSchema, _txtSchema, lblBatch, _numBatch,
+                lblGuid, lblGuidPrefix, _txtGuidPrefix, _cboGuidMode, lblMatchKey, _txtMatchKey, _chkIndexes
             });
 
             pnlSteps34.Controls.Add(grpStep3);
@@ -274,33 +265,88 @@ namespace DataverseMigrationScaffolder
             grpStep3.BringToFront();   // index 0 docks last, so Fill claims what Right leaves
 
             // ---- Tooltips -------------------------------------------------------------
-            _tip.SetToolTip(btnLoadTables, "Retrieve the table and solution lists from the connected environment (also clears the session metadata cache)");
-            _tip.SetToolTip(_cboSolution, "Tables and fields are filtered to this solution's components (Default = everything)");
-            _tip.SetToolTip(btnExclusions, "Field names whose lookups are ignored when ranking tables by dependency");
-            _tip.SetToolTip(btnOutputFolder, "Choose where generated files are written - without an output folder, generation is preview-only");
-            _tip.SetToolTip(_lblOutputFolder, "Generated files are written here");
+            // Step 1
+            Tips.Set(_tip, "Connects to the environment chosen in XrmToolBox and lists its tables and solutions. Start here.\n"
+                + "Click it again to refresh the list and clear cached metadata, so changes made in Dataverse since then are picked up.",
+                btnLoadTables);
+            Tips.Set(_tip, "Limits the tables and columns to one solution's components. Default = every table and column in the environment.\n"
+                + "A table added to the solution with all its subcomponents keeps all its columns; otherwise only the columns added to "
+                + "the solution are used. The primary id and primary name are always kept. Remembered per environment.",
+                lblSolution, _cboSolution);
+            Tips.Set(_tip, "Lookup fields to ignore when ordering tables by dependency, e.g. ownerid, createdby, modifiedby.\n"
+                + "Tables are loaded in tiers so that the record a lookup points to always exists first. System lookups such as owner "
+                + "point at tables you usually don't migrate, so excluding them keeps the tiers sensible. The columns are still generated.",
+                btnExclusions);
 
-            _tip.SetToolTip(_txtStagingPrefix, "Table name prefix, e.g. stage_ or custom_");
-            _tip.SetToolTip(_txtGuidPrefix, "Table name prefix for GUID mapping tables");
-            _tip.SetToolTip(_txtMatchKey, "Comma-separated column-name suffixes identifying match-key columns (carried into guid tables, indexed by 'Index match keys')");
-            _tip.SetToolTip(_chkTruncate, "truncate.sql - truncates all staging tables (guid truncates commented out)");
-            _tip.SetToolTip(_chkTeardown, "teardown.sql - drops all staging tables (guid drops commented out)");
-            _tip.SetToolTip(_chkManifest, "data_dictionary.xlsx - one sheet per table, ordered by display name, plus an index sheet");
-            _tip.SetToolTip(_chkMermaid, "diagram.mmd - Mermaid flowchart of lookup dependencies grouped by tier (render at mermaid.live)");
-            _tip.SetToolTip(_chkJsonManifest, "manifest.json - machine-readable run manifest: tables, tiers, file assignments, columns with types, lookup targets, match keys, cycle members");
-            _tip.SetToolTip(_chkMetaSeed, "meta_seed.sql - populates meta.Entity and meta.ColumnMap, the harness metadata an SSIS package generator reads. Cycle members get a second PassNo = 2 row carrying only their deferred lookups. Rerunnable: structure is refreshed, hand-tuned values are kept");
+            // Step 2
+            Tips.Set(_tip, "Choose the folder where SSIS projects and exported files are saved.\n"
+                + "Each Generate SSIS Project creates a new SSIS-<date-time> folder inside it. Without an output folder, Export only "
+                + "shows the files in the preview.",
+                btnOutputFolder);
 
-            _tip.SetToolTip(_txtFilter, "Filter the table grid by logical or display name");
-            _tip.SetToolTip(_cboCategory, "Filter by publisher prefix parsed from the logical name (\"oob\" = no prefix / out-of-box)");
-            _tip.SetToolTip(_chkCheckedOnly, "Show only the tables currently checked for generation");
-            _tip.SetToolTip(_txtSchema, "SQL schema for the generated tables (default: dbo)");
-            _tip.SetToolTip(_numBatch, "Maximum tables per .sql file. Files never mix dependency tiers - a tier larger than this splits into parts, a smaller tier gets its own shorter file");
-            _tip.SetToolTip(_btnGenerate, "Retrieve metadata for every checked table, rank tables by lookup dependency, and produce the selected outputs");
-            _tip.SetToolTip(_chkStaging, "Generate NN_create_staging.sql files: one column per Dataverse attribute, one dependency tier per file");
-            _tip.SetToolTip(_cboStagingMode, "Drop & recreate = DROP IF EXISTS + CREATE (rebuild at will). Create if missing = existing tables are left untouched");
-            _tip.SetToolTip(_chkGuid, "Generate NN_create_guid.sql files: id, primary name, match-key and lookup columns - for resolving legacy keys to Dataverse ids during the load");
-            _tip.SetToolTip(_cboGuidMode, "Create if missing (default) protects id mappings accumulated across migration runs; Drop & recreate rebuilds them from scratch");
-            _tip.SetToolTip(_chkIndexes, "Add a guarded nonclustered index on every match-key column - speeds up the resolution joins during data loads");
+            // Step 3: table list
+            Tips.Set(_tip, "These only change which tables the grid shows. Every checked table is generated, including checked tables "
+                + "hidden by a filter.",
+                lblList);
+            Tips.Set(_tip, "Show only tables whose logical or display name contains this text.", lblFilter, _txtFilter);
+            Tips.Set(_tip, "Show only tables with this publisher prefix (the part of the logical name before the underscore, e.g. contoso). "
+                + "\"oob\" = out-of-the-box tables with no prefix.",
+                lblCategory, _cboCategory);
+            Tips.Set(_tip, "Show only the tables that are checked, to review the selection.", _chkCheckedOnly);
+
+            // Step 3: staging tables
+            Tips.Set(_tip, "Staging tables hold the legacy data on its way into Dataverse: the Stage tasks copy it from the Legacy database, "
+                + "and the Migrate data flows load it from there. There is one staging table per checked table, with a column for every "
+                + "Dataverse field; its legacy ID column is UNIQUE.",
+                lblStaging);
+            Tips.Set(_tip, "Put in front of each staging table's name, e.g. stage_ gives stage_contoso_Project.", lblStagingPrefix, _txtStagingPrefix);
+            Tips.Set(_tip, "What Create Staging Tables does with tables that already exist:\n"
+                + "- Drop & recreate (default): deletes and rebuilds them on every run, so they always match the current Dataverse "
+                + "columns. Any data in them is lost.\n"
+                + "- Create if missing: creates only tables that don't exist yet. Existing tables and their data are left alone, even "
+                + "if the Dataverse columns have changed.",
+                _cboStagingMode);
+            Tips.Set(_tip, "SQL Server schema for all staging and GUID tables (default dbo).", lblSchema, _txtSchema);
+            Tips.Set(_tip, "The most tables per SQL file and per SSIS package pair (NNa - Staging and NNb - Harness).\n"
+                + "Tables are grouped by dependency tier, and tiers are never mixed: a tier with more tables than this is split into "
+                + "parts, and a smaller tier gets its own shorter file.",
+                lblBatch, _numBatch);
+
+            // Step 3: GUID tables
+            Tips.Set(_tip, "GUID tables hold two columns for every record created in Dataverse: its new record ID and its legacy ID. "
+                + "Tables loaded later use them to turn the legacy IDs in lookup columns into Dataverse record IDs, and the Deferred "
+                + "Updates package uses them to fill in lookups that had to wait.",
+                lblGuid);
+            Tips.Set(_tip, "Put in front of each GUID table's name, e.g. guid_ gives guid_contoso_Project.", lblGuidPrefix, _txtGuidPrefix);
+            Tips.Set(_tip, "What Create GUID Tables does with tables that already exist:\n"
+                + "- Create if missing (default): keeps them, with the ID mappings recorded by earlier runs.\n"
+                + "- Drop & recreate: deletes them on every run. Only use this when Dataverse is emptied too; otherwise lookups to "
+                + "records loaded by earlier runs can no longer be resolved.",
+                _cboGuidMode);
+            Tips.Set(_tip, "How the legacy ID column is recognised: a column whose name ends with one of these suffixes (comma-separated) "
+                + "is the match key. The default, legacyid, matches new_legacyid, contoso_legacyid and so on.\n"
+                + "Tables without a match-key column are left out of the SSIS project.",
+                lblMatchKey, _txtMatchKey);
+            Tips.Set(_tip, "Adds an index on the legacy ID column of every GUID table. This speeds up lookup resolution for large tables "
+                + "and slightly slows inserts. Staging tables are always indexed by their UNIQUE constraint.",
+                _chkIndexes);
+
+            // Step 4
+            Tips.Set(_tip, "Builds the complete SSIS migration project for the checked tables.\n"
+                + "It retrieves the latest metadata for each checked table, orders the tables by dependency, and writes a new "
+                + "SSIS-<date-time> folder in the output folder. That folder holds the project, its SQL query files, and a Scaffolder "
+                + "subfolder with the scripts, manifest and metadata seed it was built from.\n"
+                + "The first time, SSIS Settings opens so you can choose the reference project to copy from.",
+                lblStep4, _btnGenerate);
+            Tips.Set(_tip, "Saves files for the checked tables to the output folder without building an SSIS project:\n"
+                + "- SQL scripts: CREATE TABLE scripts for the staging and GUID tables\n"
+                + "- Data dictionary: an Excel workbook describing every table and column\n"
+                + "- Scaffolder run: scripts, manifest and metadata seed, to build a project later without connecting",
+                btnExport);
+            Tips.Set(_tip, "Choose the reference SSIS project or solution to copy from, the template package with the sample data flow, "
+                + "and the new project's name. These are remembered for Generate SSIS Project.\n"
+                + "You can also build a project from a previous scaffolder run here, without connecting to Dataverse.",
+                btnSsisSettings);
 
             // ---- Grid ---------------------------------------------------------------
             _grid = new DataGridView
@@ -318,6 +364,12 @@ namespace DataverseMigrationScaffolder
             _grid.Columns.Add(NewTextColumn("colCategory", "Category"));
 
             WireHeaderCheckBox("colInclude", "Include");
+            _grid.Columns["colInclude"].ToolTipText = Tips.Wrap("Check the tables to migrate. The header checkbox checks or unchecks "
+                + "every table the grid currently shows. Checked tables are remembered per environment.");
+            _grid.Columns["colLogical"].ToolTipText = "The table's logical (schema) name in Dataverse";
+            _grid.Columns["colDisplay"].ToolTipText = "The table's display name, as users see it in Dataverse";
+            _grid.Columns["colCategory"].ToolTipText = Tips.Wrap("Publisher prefix from the logical name; \"oob\" = out-of-the-box table "
+                + "with no prefix");
 
             // Commit checkbox clicks immediately so the stored state is always current.
             _grid.CurrentCellDirtyStateChanged += (s, e) =>
@@ -343,7 +395,9 @@ namespace DataverseMigrationScaffolder
             // ---- Right side: files + preview + warnings ----------------------------
             _lstFiles = new ListBox { Dock = DockStyle.Fill };
             _lstFiles.SelectedIndexChanged += (s, e) => ShowSelectedFile();
-            _tip.SetToolTip(_lstFiles, "Files produced by the last generation - select one to preview it below");
+            Tips.Set(_tip, "The results of the last run; select one to preview it below. After Generate SSIS Project, the first entry is "
+                + "the project summary: packages, tiers, skipped tables and anything that needs attention.",
+                _lstFiles);
 
             _txtPreview = new TextBox
             {
@@ -355,6 +409,7 @@ namespace DataverseMigrationScaffolder
                 Font = new Font(FontFamily.GenericMonospace, 9f),
                 Text = QuickStartText()
             };
+            Tips.Set(_tip, "The contents of the file selected above (read-only). Before the first run, this shows the quick-start guide.", _txtPreview);
 
             _txtWarnings = new TextBox
             {
@@ -367,6 +422,9 @@ namespace DataverseMigrationScaffolder
                 Text = "Warnings appear here after generation - e.g. dependency cycles that were broken " +
                        "(those lookups need a deferred UPDATE pass after the initial load)."
             };
+            Tips.Set(_tip, "Problems found by the last run, e.g. circular lookups that had to be broken (table A looks up B and B looks up "
+                + "A). Those lookups are left empty on the first load and filled in afterwards by the Deferred Updates package.",
+                _txtWarnings);
 
             var rightSplit = new SplitContainer
             {
@@ -374,6 +432,7 @@ namespace DataverseMigrationScaffolder
                 Orientation = Orientation.Horizontal
             };
             var lblFiles = new Label { Dock = DockStyle.Top, Height = 18, Text = "Generated files (select to preview):" };
+            _tip.SetToolTip(lblFiles, _tip.GetToolTip(_lstFiles));
             rightSplit.Panel1.Controls.Add(_lstFiles);
             rightSplit.Panel1.Controls.Add(lblFiles);
             rightSplit.Panel2.Controls.Add(_txtPreview);
@@ -384,11 +443,15 @@ namespace DataverseMigrationScaffolder
             mainSplit.Panel2.Controls.Add(rightSplit);
 
             // ---- Status bar ----------------------------------------------------------
-            var status = new StatusStrip();
+            var status = new StatusStrip { ShowItemToolTips = true };
             _sslOrg = new ToolStripStatusLabel("(not connected)");
             _sslChecked = new ToolStripStatusLabel("Checked: 0");
             _sslLast = new ToolStripStatusLabel("");
             _sslOutput = new ToolStripStatusLabel("(no output folder - preview only)") { Spring = true, TextAlign = ContentAlignment.MiddleRight };
+            _sslOrg.ToolTipText = "The connected Dataverse environment";
+            _sslChecked.ToolTipText = "Tables checked for generation, including checked tables hidden by a filter";
+            _sslLast.ToolTipText = "What the most recent run produced";
+            _sslOutput.ToolTipText = "The output folder";
             status.Items.AddRange(new ToolStripItem[] { _sslOrg, new ToolStripStatusLabel("|"), _sslChecked, new ToolStripStatusLabel("|"), _sslLast, _sslOutput });
 
             // Docking resolves in reverse index order, so the Fill control goes in first and
@@ -439,14 +502,14 @@ namespace DataverseMigrationScaffolder
                 "     checkbox toggles every row shown by the current filter, and",
                 "     selections are remembered per environment.",
                 "",
-                "     Table scripts   staging and GUID mapping DDL, with editable",
-                "                     prefixes and drop-vs-create handling.",
-                "     Extra outputs   truncate and teardown scripts, Excel data",
-                "                     dictionary, Mermaid diagram, manifest JSON, and",
-                "                     the harness metadata seed (meta.Entity and",
-                "                     meta.ColumnMap) for a package generator.",
+                "     Staging and GUID tables: name prefixes, drop-vs-create handling,",
+                "     schema, tables per file and the legacy match key.",
                 "",
-                "  STEP 4  Generate Scripts",
+                "  STEP 4  Generate SSIS Project builds the migration harness straight from",
+                "          the checked tables and your reference SSIS project (chosen once",
+                "          under SSIS Settings...), in a new SSIS-<date> folder.",
+                "          Export saves SQL scripts, a data dictionary or a scaffolder",
+                "          run (to rebuild a project later without connecting).",
                 "",
                 "  Files are batched strictly by dependency tier: everything in a file",
                 "  depends only on tables from the same or earlier files - matching",
@@ -455,6 +518,11 @@ namespace DataverseMigrationScaffolder
                 "  Hover any control for details. Full documentation: Help menu or the",
                 "  project website (GitHub)."
             });
+        }
+
+        private static Label NewRowLabel(string text, int y)
+        {
+            return new Label { Text = text, Location = new Point(10, y), AutoSize = true, ForeColor = Color.DimGray };
         }
 
         /// <summary>
@@ -650,20 +718,12 @@ namespace DataverseMigrationScaffolder
             LoadSelectionFor(CurrentOrgKey);
             UpdateCheckedCount();
 
-            _chkStaging.Checked = _settings.GenerateStaging;
-            _chkGuid.Checked = _settings.GenerateGuid;
             _txtStagingPrefix.Text = _settings.StagingPrefix ?? "stage_";
             _txtGuidPrefix.Text = _settings.GuidPrefix ?? "guid_";
             _txtMatchKey.Text = _settings.MatchKeySuffixes ?? "legacyid";
             _cboStagingMode.SelectedIndex = _settings.StagingDropRecreate ? 0 : 1;
             _cboGuidMode.SelectedIndex = _settings.GuidDropRecreate ? 0 : 1;
-            _chkTruncate.Checked = _settings.GenerateTruncateScript;
             _chkIndexes.Checked = _settings.IndexLegacyIdColumns;
-            _chkTeardown.Checked = _settings.GenerateTeardown;
-            _chkManifest.Checked = _settings.GenerateDataDictionary;
-            _chkMermaid.Checked = _settings.GenerateMermaid;
-            _chkJsonManifest.Checked = _settings.GenerateJsonManifest;
-            _chkMetaSeed.Checked = _settings.GenerateMetadataSeed;
 
             UpdateOutputFolderLabel();
         }
@@ -679,20 +739,12 @@ namespace DataverseMigrationScaffolder
             _settings.SchemaName = string.IsNullOrWhiteSpace(_txtSchema.Text) ? "dbo" : _txtSchema.Text.Trim();
             _settings.BatchSize = (int)_numBatch.Value;
             StoreSelection();
-            _settings.GenerateStaging = _chkStaging.Checked;
-            _settings.GenerateGuid = _chkGuid.Checked;
             _settings.StagingPrefix = _txtStagingPrefix.Text == null ? "" : _txtStagingPrefix.Text.Trim();
             _settings.GuidPrefix = _txtGuidPrefix.Text == null ? "" : _txtGuidPrefix.Text.Trim();
             _settings.MatchKeySuffixes = _txtMatchKey.Text == null ? "" : _txtMatchKey.Text.Trim();
             _settings.StagingDropRecreate = _cboStagingMode.SelectedIndex == 0;
             _settings.GuidDropRecreate = _cboGuidMode.SelectedIndex == 0;
-            _settings.GenerateTruncateScript = _chkTruncate.Checked;
             _settings.IndexLegacyIdColumns = _chkIndexes.Checked;
-            _settings.GenerateTeardown = _chkTeardown.Checked;
-            _settings.GenerateDataDictionary = _chkManifest.Checked;
-            _settings.GenerateMermaid = _chkMermaid.Checked;
-            _settings.GenerateJsonManifest = _chkJsonManifest.Checked;
-            _settings.GenerateMetadataSeed = _chkMetaSeed.Checked;
         }
 
         public override void ClosingPlugin(PluginCloseInfo info)
@@ -931,37 +983,95 @@ namespace DataverseMigrationScaffolder
 
         #region Generate
 
-        private void GenerateScripts()
+        /// <summary>Checked tables that exist in the connected environment and the selected solution.</summary>
+        private List<string> CheckedPicks()
         {
-            CaptureSettingsFromUi();
-            ExitEditMode();
-
-            // Only generate for tables that exist in the connected environment AND are part
-            // of the currently selected solution.
             var known = new HashSet<string>(
                 _allTables.Where(InCurrentSolution).Select(t => t.LogicalName),
                 StringComparer.OrdinalIgnoreCase);
-            var picks = _checkedTables.Where(t => known.Contains(t))
-                                      .OrderBy(t => t, StringComparer.OrdinalIgnoreCase)
-                                      .ToList();
+            return _checkedTables.Where(t => known.Contains(t))
+                                 .OrderBy(t => t, StringComparer.OrdinalIgnoreCase)
+                                 .ToList();
+        }
 
+        /// <summary>Export: save one kind of output to the output folder, without an SSIS project.</summary>
+        private void Export(ExportKind kind)
+        {
+            CaptureSettingsFromUi();
+            ExitEditMode();
+            var picks = CheckedPicks();
             if (picks.Count == 0)
             {
                 MessageBox.Show(this, "Load tables and check at least one first.",
                     "Nothing selected", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
+            RunGeneration(picks, _settings.ForExport(kind), null);
+        }
 
-            if (!_settings.GenerateStaging && !_settings.GenerateGuid && !_settings.GenerateTruncateScript &&
-                !_settings.GenerateTeardown && !_settings.GenerateDataDictionary && !_settings.GenerateMermaid &&
-                !_settings.GenerateJsonManifest && !_settings.GenerateMetadataSeed)
+        /// <summary>Generate SSIS Project: build the project from the checked tables in memory, using the
+        /// remembered SSIS settings (asked for once), and save the ticked outputs too.</summary>
+        private void GenerateSsisProject()
+        {
+            CaptureSettingsFromUi();
+            ExitEditMode();
+            var picks = CheckedPicks();
+            if (picks.Count == 0)
             {
-                MessageBox.Show(this, "Enable at least one output.",
-                    "Nothing to generate", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show(this, "Load tables and check at least one first.",
+                    "Nothing selected", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
+            if (string.IsNullOrEmpty(_settings.OutputFolder))
+            {
+                MessageBox.Show(this, "Set the output folder (Step 2) first: the SSIS project is written to a new folder inside it.",
+                    "No output folder", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+            string output;
+            if (HarnessGenerator.SettingsComplete(_settings))
+            {
+                output = HarnessGenerator.NewOutputFolder(_settings.OutputFolder);
+            }
+            else
+            {
+                using (var dialog = new HarnessDialog(_settings, true))
+                {
+                    var answer = dialog.ShowDialog(this);
+                    SaveSettings();
+                    if (answer != DialogResult.OK) return;
+                    output = dialog.OutputFolder;
+                }
+            }
+            RunGeneration(picks, _settings.ForHarness(), output);
+        }
 
-            var settings = _settings;
+        /// <summary>SSIS Settings...: change the reference project, or build from a previous run's manifest.</summary>
+        private void OpenSsisSettings()
+        {
+            CaptureSettingsFromUi();
+            ExitEditMode();
+            var picks = Service != null ? CheckedPicks() : new List<string>();
+            using (var dialog = new HarnessDialog(_settings, picks.Count > 0))
+            {
+                var answer = dialog.ShowDialog(this);
+                SaveSettings();
+                if (answer == DialogResult.OK) ExecuteMethod(() => RunGeneration(picks, _settings.ForHarness(), dialog.OutputFolder));
+            }
+        }
+
+        private sealed class RunOutcome
+        {
+            public GenerationResult Scripts;
+            public string SsisOutput;
+            public string SsisSummary;
+            public string SsisError;
+        }
+
+        /// <param name="settings">which files to generate (ToolSettings.ForHarness or ForExport).</param>
+        /// <param name="ssisOutput">folder for the SSIS project, or null to save the generated files only.</param>
+        private void RunGeneration(List<string> picks, ToolSettings settings, string ssisOutput)
+        {
             var cache = _metadataCache;
             var solutionFilter = _solutionFilter;
 
@@ -972,7 +1082,7 @@ namespace DataverseMigrationScaffolder
                 Work = (worker, args) =>
                 {
                     var service = new MetadataService(Service);
-                    var tables = new List<TableModel>();
+                    var entities = new List<EntityMetadata>();
 
                     for (var i = 0; i < picks.Count; i++)
                     {
@@ -996,13 +1106,30 @@ namespace DataverseMigrationScaffolder
                             entity = service.GetTableWithAttributes(pick);
                             cache[pick] = entity;
                         }
-
-                        tables.Add(MetadataMapper.BuildTable(entity, settings, solutionFilter));
+                        entities.Add(entity);
                     }
 
                     worker.ReportProgress(100, "Generating scripts...");
-                    var generator = new ScriptGenerator(settings);
-                    args.Result = generator.Generate(tables);
+                    var outcome = new RunOutcome { SsisOutput = ssisOutput };
+                    outcome.Scripts = new ScriptGenerator(settings).Generate(
+                        entities.Select(e => MetadataMapper.BuildTable(e, settings, solutionFilter)).ToList());
+                    if (ssisOutput != null)
+                    {
+                        // The project is built from the run in memory; the run itself is kept beside it.
+                        worker.ReportProgress(100, "Generating the SSIS project...");
+                        try
+                        {
+                            outcome.SsisSummary = HarnessGenerator.GenerateFromRun(outcome.Scripts.Files, settings.HarnessProjectFile,
+                                settings.HarnessPackage, ssisOutput, settings.HarnessProjectName, settings.HarnessDontSaveSensitive);
+                            WriteFiles(Path.Combine(ssisOutput, HarnessGenerator.RunFolder), outcome.Scripts.Files);
+                        }
+                        catch (Exception ex) when (ex is InvalidOperationException || ex is ArgumentException
+                                                   || ex is IOException || ex is UnauthorizedAccessException)
+                        {
+                            outcome.SsisError = ex.Message;
+                        }
+                    }
+                    args.Result = outcome;
                 },
                 ProgressChanged = e => SetWorkingMessage(e.UserState == null ? "" : e.UserState.ToString()),
                 PostWorkCallBack = args =>
@@ -1018,15 +1145,57 @@ namespace DataverseMigrationScaffolder
                         return;
                     }
 
-                    _lastResult = (GenerationResult)args.Result;
-                    ShowResult(_lastResult);
+                    var outcome = (RunOutcome)args.Result;
+                    _lastResult = outcome.Scripts;
+                    ShowResult(outcome);
                     SaveSettings();   // persist the selection that produced this run
                 }
             });
         }
 
-        private void ShowResult(GenerationResult result)
+        private static int WriteFiles(string folder, IEnumerable<GeneratedFile> files)
         {
+            Directory.CreateDirectory(folder);
+            var written = 0;
+            foreach (var file in files)
+            {
+                var path = Path.Combine(folder, file.FileName);
+                if (file.BinaryContent != null) File.WriteAllBytes(path, file.BinaryContent);
+                else File.WriteAllText(path, file.Content, Encoding.UTF8);
+                written++;
+            }
+            return written;
+        }
+
+        private void ShowResult(RunOutcome outcome)
+        {
+            var result = outcome.Scripts;
+            var ssis = outcome.SsisOutput != null;
+            var written = 0;
+            if (!ssis && !string.IsNullOrEmpty(_settings.OutputFolder))
+            {
+                try { written = WriteFiles(_settings.OutputFolder, result.Files); }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(this, "The files were generated but writing them failed: " + ex.Message,
+                        "Write error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                }
+            }
+            var fileCount = result.Files.Count;
+
+            // The SSIS project summary is listed first in the preview, but never written as a file.
+            if (ssis)
+            {
+                foreach (var file in result.Files)
+                    file.Description = string.IsNullOrEmpty(file.Description) ? HarnessGenerator.RunFolder : HarnessGenerator.RunFolder + ": " + file.Description;
+                result.Files.Insert(0, new GeneratedFile
+                {
+                    FileName = outcome.SsisError == null ? "SSIS project" : "SSIS project (failed)",
+                    Description = outcome.SsisOutput,
+                    Content = outcome.SsisError == null ? outcome.SsisSummary : "Generation failed: " + outcome.SsisError,
+                });
+            }
+
             _lstFiles.Items.Clear();
             foreach (var file in result.Files)
             {
@@ -1048,48 +1217,54 @@ namespace DataverseMigrationScaffolder
 
             if (_lstFiles.Items.Count > 0) _lstFiles.SelectedIndex = 0;
 
-            var written = 0;
-            if (!string.IsNullOrEmpty(_settings.OutputFolder))
-            {
-                try
-                {
-                    Directory.CreateDirectory(_settings.OutputFolder);
-                    foreach (var file in result.Files)
-                    {
-                        var path = Path.Combine(_settings.OutputFolder, file.FileName);
-                        if (file.BinaryContent != null)
-                        {
-                            File.WriteAllBytes(path, file.BinaryContent);
-                        }
-                        else
-                        {
-                            File.WriteAllText(path, file.Content, Encoding.UTF8);
-                        }
-                        written++;
-                    }
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show(this, "Scripts were generated but writing files failed: " + ex.Message,
-                        "Write error", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-                }
-            }
-
-            _sslLast.Text = string.Format("Last run: {0} tables -> {1} files at {2:HH:mm}",
-                result.OrderedTables.Count, result.Files.Count, DateTime.Now);
+            var ok = ssis && outcome.SsisError == null;
+            _sslLast.Text = ssis
+                ? string.Format("Last run: {0} tables -> {1} at {2:HH:mm}", result.OrderedTables.Count, ok ? "SSIS project" : "SSIS project failed", DateTime.Now)
+                : string.Format("Last run: {0} tables -> {1} files at {2:HH:mm}", result.OrderedTables.Count, fileCount, DateTime.Now);
 
             var summary = new StringBuilder();
-            summary.AppendFormat("{0} tables -> {1} files.", result.OrderedTables.Count, result.Files.Count);
-            summary.AppendLine();
-            summary.AppendLine(written > 0
-                ? string.Format("{0} files written to {1}", written, _settings.OutputFolder)
-                : "No output folder set - use Set Output Folder to write files to disk.");
+            if (ssis)
+            {
+                if (!ok)
+                {
+                    summary.AppendLine("The SSIS project could not be generated:");
+                    summary.AppendLine(outcome.SsisError);
+                }
+                else
+                {
+                    summary.AppendLine("SSIS project generated in " + outcome.SsisOutput);
+                    var headline = (outcome.SsisSummary ?? "").Split('\n').Skip(1).FirstOrDefault();
+                    if (!string.IsNullOrWhiteSpace(headline)) summary.AppendLine(headline.Trim());
+                    summary.AppendLine();
+                    summary.AppendLine("The scaffolder run it was built from (scripts, manifest, metadata seed) is in its "
+                                       + HarnessGenerator.RunFolder + " folder.");
+                }
+            }
+            else
+            {
+                summary.AppendFormat("{0} tables -> {1} files.", result.OrderedTables.Count, fileCount);
+                summary.AppendLine();
+                summary.AppendLine(written > 0
+                    ? string.Format("{0} files written to {1}", written, _settings.OutputFolder)
+                    : "No output folder set - the files are shown in the preview only. Use Set Output Folder to save them.");
+            }
             if (result.Warnings.Count > 0)
             {
+                summary.AppendLine();
                 summary.AppendFormat("{0} warning(s) - see panel below the preview.", result.Warnings.Count);
             }
 
-            MessageBox.Show(this, summary.ToString(), "Generation complete", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            if (ok)
+            {
+                summary.AppendLine();
+                summary.AppendLine();
+                summary.Append("Open the SSIS project folder?");
+                if (MessageBox.Show(this, summary.ToString(), "Generation complete", MessageBoxButtons.YesNo, MessageBoxIcon.Information) == DialogResult.Yes)
+                    System.Diagnostics.Process.Start("explorer.exe", "\"" + outcome.SsisOutput + "\"");
+                return;
+            }
+            MessageBox.Show(this, summary.ToString(), ssis ? "SSIS project not generated" : "Export complete",
+                MessageBoxButtons.OK, ssis ? MessageBoxIcon.Warning : MessageBoxIcon.Information);
         }
 
         private void ShowSelectedFile()

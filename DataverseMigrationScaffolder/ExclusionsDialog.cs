@@ -64,6 +64,11 @@ namespace DataverseMigrationScaffolder
             CancelButton = btnCancel;
 
             btnOk.Click += (s, e) => Result = _txtBody.Text;
+
+            var tip = Tips.New();
+            Tips.Set(tip, "One field logical name per line (commas also work), e.g. ownerid. Applies to every table. Lookups through these "
+                + "fields don't affect the order tables are loaded in, but the columns are still generated.", _txtBody);
+            Tips.Set(tip, "Save the list. It takes effect on the next Generate or Export.", btnOk);
         }
     }
 }

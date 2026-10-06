@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
     <id>DataverseMigrationScaffolder</id>
-    <version>1.2026.7.8</version>
+    <version>1.2026.9.29</version>
     <title>Dataverse Migration Scaffolder</title>
     <authors>Ryu Ohkawa</authors>
     <owners>Ryu Ohkawa</owners>
@@ -10,9 +10,20 @@
     <iconUrl>https://raw.githubusercontent.com/ryuohk/DataverseMigrationScaffolder/main/images/logo.png</iconUrl>
     <license type="expression">MIT</license>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>XrmToolBox tool that scaffolds a SQL data-migration harness from Dataverse metadata: staging table and GUID mapping table DDL scripts batched strictly by dependency tier, plus truncate/teardown scripts, match-key indexes, a styled Excel data dictionary, a Mermaid dependency diagram, a machine-readable manifest.json, and a harness metadata seed (meta.Entity / meta.ColumnMap) that drives SSIS package generation - including a deferred second pass for every dependency cycle it breaks. Filters tables and columns by solution, remembers selections per environment, and is fully configurable (prefixes, match-key suffixes, dependency-ranking exclusions).</description>
-    <summary>Scaffold SQL staging and GUID mapping tables from Dataverse metadata, batched by dependency tier - plus data dictionary, dependency diagram, JSON run manifest, harness metadata seed for SSIS package generation, and reset/teardown scripts.</summary>
+    <description>XrmToolBox tool that scaffolds a SQL data-migration harness from Dataverse metadata: staging table and GUID mapping table DDL scripts batched strictly by dependency tier, plus match-key indexes, a styled Excel data dictionary, a machine-readable manifest.json, and a harness metadata seed (meta.Entity / meta.ColumnMap), and generates a tailored SSIS migration harness project from them - including a deferred second pass for every dependency cycle it breaks. Filters tables and columns by solution, remembers selections per environment, and is fully configurable (prefixes, match-key suffixes, dependency-ranking exclusions).</description>
+    <summary>Scaffold SQL staging and GUID mapping tables from Dataverse metadata, batched by dependency tier - plus data dictionary, JSON run manifest, harness metadata seed, and SSIS migration harness generation.</summary>
     <releaseNotes>
+1.2026.9.29: Integrated SSIS Migration Harness Generator.
+- Generate SSIS Project builds the harness straight from the checked tables (scripts, manifest and metadata seed are produced in memory); the reference project, template package and project name are remembered, so later runs take one click. Each project keeps the scaffolder run it was built from in a Scaffolder subfolder; SSIS Settings... can rebuild from it (or any exported run) without connecting, and can save the project with DontSaveSensitive so no passwords or secrets are stored in it.
+- Removed the truncate, teardown and Mermaid diagram outputs and the output checkboxes. Step 3 holds only table list, staging table and GUID table settings; Export saves SQL scripts, the data dictionary or a scaffolder run.
+- Generate SSIS Project dialog accepts .sln or .dtproj references and an explicit template package.
+- Bundled generator retains connection managers and generates packages using scaffolder file groups, with a separate project name and execution entry point.
+- Supports create SavedRecordId mappings and optional update GUID synchronization with the reduced GUID-table schema.
+- GUID tables hold only the record id and legacy id; staging legacy ids are UNIQUE.
+- Staging packages: Create Staging Tables, then one Stage task per table generated from the reference's Stage task and SQL file (lookups resolved through GUID tables). Harness packages start with Create GUID Tables; the setup package also creates all GUID tables. Run_Migration runs staging then harness per group.
+- KingswaySoft automation options (bypass flows, disable plugins/workflows/auditing) are carried to every table. Deferred updates re-resolve their lookups from legacy data, including polymorphic ones via their type column.
+- The generator runs inside the plugin (C#); nothing else needs to be installed. Reports skipped tables and unresolved issues. Does not execute a migration.
+
 1.2026.7.8: Harness metadata output and a guided four-step layout.
 - New meta_seed.sql output (off by default): MERGE statements populating meta.Entity and meta.ColumnMap, the metadata an SSIS package generator reads to build a migration harness. Structural facts (tier, table names, SSIS data types, lookup targets) refresh on every run; hand-tuned values (WriteMode, BatchSize, ThreadCount, IsEnabled, IncludeOnCreate, IncludeOnUpdate) are written once and never overwritten. Attributes dropped from Dataverse are removed; entities outside the run are untouched, so scoping to one solution never deletes another's metadata
 - Cycle members automatically get a second PassNo = 2 entity row carrying only the lookups deferred to break the cycle - the deferred update pass the warnings have always described in prose

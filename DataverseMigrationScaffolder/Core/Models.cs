@@ -6,7 +6,7 @@ namespace DataverseMigrationScaffolder.Core
     /// <summary>A column destined for a generated SQL table.</summary>
     public class SqlColumn
     {
-        public string Name { get; set; }            // logical name, e.g. jn_caseid
+        public string Name { get; set; }            // logical name, e.g. new_projectid
         public string SqlType { get; set; }         // e.g. NVARCHAR(100), DATETIME2(7)
         public bool IsLookup { get; set; }
         public bool IsPolymorphic { get; set; }     // more than one target (customer/owner/regarding)
@@ -35,7 +35,7 @@ namespace DataverseMigrationScaffolder.Core
     public class TableModel
     {
         public string LogicalName { get; set; }
-        public string SchemaName { get; set; }      // preserves casing, e.g. jn_Allegation
+        public string SchemaName { get; set; }      // preserves casing, e.g. new_Project
         public string DisplayName { get; set; }
         public string Prefix { get; set; }          // publisher prefix parsed from the logical name; "oob" if none
         public string PrimaryIdAttribute { get; set; }
