@@ -12,6 +12,17 @@ namespace DataverseMigrationScaffolder.Core
         public string Solution { get; set; }   // last selected solution unique name
     }
 
+    /// <summary>What Export saves to the output folder.</summary>
+    public enum ExportKind
+    {
+        /// <summary>NN_create_staging.sql and NN_create_guid.sql.</summary>
+        SqlScripts,
+        /// <summary>data_dictionary.xlsx.</summary>
+        DataDictionary,
+        /// <summary>Everything the SSIS generator reads: scripts, manifest.json and meta_seed.sql.</summary>
+        ScaffolderRun,
+    }
+
     /// <summary>Persisted via XrmToolBox SettingsManager (XmlSerializer under the hood).</summary>
     public class ToolSettings
     {
@@ -49,6 +60,8 @@ namespace DataverseMigrationScaffolder.Core
         }
 
         // ---- Output options -------------------------------------------------
+        // Which files one ScriptGenerator run produces. The UI no longer edits these: every run
+        // uses a copy from ForHarness or ForExport.
         public bool GenerateStaging { get; set; } = true;
         public bool GenerateGuid { get; set; } = true;
         /// <summary>true = DROP TABLE IF EXISTS + CREATE; false = CREATE only if missing.</summary>
@@ -59,8 +72,8 @@ namespace DataverseMigrationScaffolder.Core
 
         /// <summary>
         /// Comma-separated suffixes identifying "match key" columns (carried into guid tables
-        /// and indexed by the index option). Default "legacyid" matches jn_legacyid,
-        /// jnc_legacyid, new_legacyid, etc.
+        /// and indexed by the index option). Default "legacyid" matches new_legacyid,
+        /// contoso_legacyid, etc.
         /// </summary>
         public string MatchKeySuffixes { get; set; } = "legacyid";
 
@@ -77,14 +90,8 @@ namespace DataverseMigrationScaffolder.Core
             }
             return false;
         }
-        /// <summary>Emit truncate.sql truncating all staging tables (guid truncates commented out).</summary>
-        public bool GenerateTruncateScript { get; set; } = false;
-        /// <summary>Emit teardown.sql dropping all staging tables (guid drops commented out).</summary>
-        public bool GenerateTeardown { get; set; } = false;
         /// <summary>Emit data_dictionary.xlsx: one sheet per table, ordered by display name.</summary>
         public bool GenerateDataDictionary { get; set; } = false;
-        /// <summary>Emit diagram.mmd: Mermaid flowchart of lookup dependencies grouped by tier.</summary>
-        public bool GenerateMermaid { get; set; } = false;
         /// <summary>Emit manifest.json: machine-readable run manifest (tables, tiers, files, columns, lookups, cycles).</summary>
         public bool GenerateJsonManifest { get; set; } = true;
 
@@ -115,6 +122,42 @@ namespace DataverseMigrationScaffolder.Core
                 }
             }
             return set;
+        }
+
+        // ---- SSIS project generation ------------------------------------------
+        /// <summary>Reference SSIS solution (.sln) or project (.dtproj) the harness is cloned from.</summary>
+        public string HarnessReference { get; set; } = "";
+        /// <summary>The .dtproj inside HarnessReference (the reference itself when it is a .dtproj).</summary>
+        public string HarnessProjectFile { get; set; } = "";
+        /// <summary>Template package in that project, e.g. "01b - Harness.dtsx".</summary>
+        public string HarnessPackage { get; set; } = "";
+        public string HarnessProjectName { get; set; } = "MigrationHarness_Generated";
+        /// <summary>Generate with protection level DontSaveSensitive: no passwords or secrets are stored
+        /// in the project, so anyone can open it; credentials are supplied when deploying. Off = keep the
+        /// reference's protection level and copy its encrypted values unchanged.</summary>
+        public bool HarnessDontSaveSensitive { get; set; } = false;
+
+        /// <summary>A copy that produces every output the SSIS generator reads (scripts, manifest, meta
+        /// seed) whatever the user chose to save; prefixes, modes and match keys are kept.</summary>
+        public ToolSettings ForHarness()
+        {
+            var copy = (ToolSettings)MemberwiseClone();
+            copy.GenerateStaging = true;
+            copy.GenerateGuid = true;
+            copy.GenerateJsonManifest = true;
+            copy.GenerateMetadataSeed = true;
+            copy.GenerateDataDictionary = false;
+            return copy;
+        }
+
+        /// <summary>A copy that produces exactly the files one Export choice saves.</summary>
+        public ToolSettings ForExport(ExportKind kind)
+        {
+            var copy = (ToolSettings)MemberwiseClone();
+            copy.GenerateStaging = copy.GenerateGuid = kind != ExportKind.DataDictionary;
+            copy.GenerateJsonManifest = copy.GenerateMetadataSeed = kind == ExportKind.ScaffolderRun;
+            copy.GenerateDataDictionary = kind == ExportKind.DataDictionary;
+            return copy;
         }
 
         public string GetSolution(string orgKey)

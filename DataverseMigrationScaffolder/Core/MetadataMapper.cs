@@ -67,7 +67,7 @@ namespace DataverseMigrationScaffolder.Core
                     });
                 }
 
-                // Polymorphic lookups carry a companion "<name>type" column (e.g. jn_regardingidtype).
+                // Polymorphic lookups carry a companion "<name>type" column (e.g. new_regardingidtype).
                 if (col.IsLookup && col.IsPolymorphic)
                 {
                     columns.Add(new SqlColumn(col.Name + "type", "NVARCHAR(100)")
@@ -210,7 +210,7 @@ namespace DataverseMigrationScaffolder.Core
                     break;
 
                 case AttributeTypeCode.Uniqueidentifier:
-                    // Only the table's own primary key (e.g. jn_allegationid); skip address1_addressid etc.
+                    // Only the table's own primary key (e.g. new_projectid); skip address1_addressid etc.
                     if (isPrimaryId) col = new SqlColumn(name, "NVARCHAR(100)") { IsPrimaryId = true };
                     break;
 

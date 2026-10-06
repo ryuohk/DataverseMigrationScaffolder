@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Command-line front end for the C# harness generator, with the same arguments as the
+       original Python tool, so both can be run on the same inputs and their output compared. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <LangVersion>7.3</LangVersion>
+    <AssemblyName>harnessgen</AssemblyName>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="../../DataverseMigrationScaffolder/Harness/*.cs" LinkBase="Harness" />
+  </ItemGroup>
+</Project>

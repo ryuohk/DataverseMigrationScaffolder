@@ -8,9 +8,10 @@ Generates the SQL DDL for a data-migration harness directly from Dataverse metad
 
 - **Staging tables** (`stage_<Table>`): `DROP TABLE IF EXISTS` + `CREATE TABLE`, one column per
   (filtered) Dataverse attribute, typed by the mapping table below, plus the fixed audit
-  boilerplate.
+  boilerplate. Each `*legacyid` column is `UNIQUE` (constraint `UQ_stage_<Table>_<column>`), so
+  a legacy record can only be staged once.
 - **GUID mapping tables** (`guid_<Table>`): created only if missing (`IF OBJECT_ID(...) IS NULL`),
-  containing the unique identifier column, primary name column, legacyid, and all lookup columns.
+  containing only the unique identifier column and the legacyid (a legacy id -> GUID crosswalk).
 
 Scripts are split into separate files for staging vs guid, with **strictly one dependency tier
 per file**. Tier 0 is everything with no lookup dependencies inside the selection; tier n sits at
@@ -64,32 +65,29 @@ add a post-build event to copy the DLL into the plugins folder.
    checkbox in the Include column header checks or unchecks everything currently shown by the
    filter.
 
-5. Set **Schema** (default `dbo`) and **Batch** (default 40), then pick a folder with **Set
-   Output Folder**. The output options row has two sections:
+5. Pick a folder with **Set Output Folder**. Step 3 holds settings only:
 
-   **Table scripts**
-   - Staging and GUID file sets, each with an editable table-name prefix and a *Drop & recreate*
-     or *Create if missing* mode.
-   - **Index legacyid**: guarded nonclustered index on every `*legacyid` column.
+   - **Table list**: Filter, Category and Checked only narrow the grid.
+   - **Staging tables**: table-name prefix, *Drop & recreate* or *Create if missing* mode,
+     **Schema** (default `dbo`) and **Tables per file** (default 40).
+   - **GUID tables**: prefix and mode, **Match key** suffixes (default `legacyid`) and
+     **Index match keys** (guarded nonclustered index on every GUID table match-key column).
+     Staging match keys are always indexed by their `UNIQUE` constraint.
 
-   **Extra outputs**
-   - **Truncate script** (`truncate.sql`): truncates all staging tables, guid truncates
-     commented out.
-   - **Teardown script** (`teardown.sql`): drops all staging tables, guid drops commented out.
-   - **Data dictionary** (`data_dictionary.xlsx`): one sheet per table ordered by display name,
-     each with an entity info block and per-column logical name, display name, type, lookup
+6. Step 4: **Generate SSIS Project** builds the migration harness (see below). **Export**
+   saves files to the output folder without a project:
+   - **SQL scripts (staging and GUID tables)**: `01_create_staging.sql`, `02_create_staging.sql`,
+     ... and `01_create_guid.sql`, ..., one dependency tier per file.
+   - **Data dictionary (Excel)**: `data_dictionary.xlsx`, one sheet per table ordered by display
+     name, each with an entity info block and per-column logical name, display name, type, lookup
      targets, description, and SQL type. A `~Tables` index sheet shows tier, file number, and
      cycle-dropped dependencies.
-   - **Mermaid diagram** (`diagram.mmd`): flowchart of lookup dependencies with one subgraph per
-     tier and dashed arrows for cycle-dropped edges. Render at mermaid.live or paste into GitHub
-     or Azure DevOps markdown.
-   - **Manifest JSON** (`manifest.json`, on by default). See below.
+   - **Scaffolder run (manifest, scripts, metadata seed)**: the SQL scripts plus `manifest.json`
+     and `meta_seed.sql`, everything needed to build an SSIS project later without connecting.
 
-6. **Generate Scripts** retrieves attribute metadata per checked table, sorts by dependency,
-   writes `01_create_staging.sql`, `02_create_staging.sql`, and so on through
-   `01_create_guid.sql`, then shows a preview per file. Circular dependencies are broken
-   automatically and noted in both the file header comment and the warnings panel. The checked
-   selection is saved with each successful run.
+   Each run retrieves attribute metadata per checked table, sorts by dependency and shows a
+   preview per file. Circular dependencies are broken automatically and noted in both the file
+   header comment and the warnings panel. The checked selection is saved with each successful run.
 
 ## manifest.json
 
@@ -168,10 +166,12 @@ uniqueidentifiers such as `address1_addressid`, file/image/partylist columns, an
 metadata rows (regenerated from the money column instead). Edit `GlobalSkip` in
 `Core/MetadataMapper.cs`.
 
-**GUID tables** contain the `<primaryid>` as `VARCHAR(100)`, the primary name column, any
-`*legacyid` column the table actually has in Dataverse, and every custom lookup column as
-`NVARCHAR(100)`, with polymorphic ones getting their `<name>type` companion. System `ownerid` is
-not repeated in guid tables.
+**GUID tables** contain only the `<primaryid>` as `VARCHAR(100)` and any `*legacyid` column the
+table actually has in Dataverse (indexed when match-key indexes are on). They are a legacy id ->
+GUID crosswalk: staging SQL resolves lookups by joining on these two columns, and the migration
+harness writes them as records are created. Primary name, lookup and state columns are not
+stored; they live in staging and Dataverse. GUID tables created by earlier versions keep their
+extra columns (the script never alters an existing GUID table); they are nullable and unused.
 
 **Column inclusion rule (all tables):** with the Default solution selected, every non-system
 attribute is included. With a specific solution selected, only that solution's components are
@@ -195,9 +195,9 @@ there is no prefix.
 
 - Prefixes (`stage_`, `guid_`) and the values used for Category labelling live in
   `Core/ToolSettings.cs`. Point them at whatever publisher prefix you use.
-- The generator is isolated in `Core/ScriptGenerator.cs`. Adding a new output kind (TRUNCATE
-  scripts, SELECT column lists, data dictionary, KingswaySoft column maps) means adding one
-  method that walks the same `TableModel` list.
+- The generator is isolated in `Core/ScriptGenerator.cs`. Adding a new output kind (SELECT
+  column lists, KingswaySoft column maps) means adding one method that walks the same
+  `TableModel` list.
 - Metadata retrieval and dependency sorting carry no environment-specific logic, so they run
   against any org as they are.
 
@@ -219,6 +219,105 @@ DataverseMigrationScaffolder/
     ScriptGenerator.cs             staging + guid DDL emission, batching, extra outputs
     JsonWriter.cs                  minimal dependency-free JSON writer (manifest.json)
     XlsxWriter.cs                  minimal dependency-free xlsx writer (data dictionary)
+```
+
+## Generate an SSIS migration project (1.2026.9.29)
+
+Step 4's **Generate SSIS Project** button builds the migration harness straight from the
+checked tables. Nothing else needs to be installed: the generator is part of the plugin
+(`DataverseMigrationScaffolder/Harness/`, a C# port of the original Python tool), and no
+script or manifest files need to be written first.
+
+1. Load tables, check the ones to migrate, and set the output folder (steps 1-3).
+2. Click **Generate SSIS Project**. The first time, the SSIS settings open: choose the
+   reference `.dtproj` or `.sln` (for a solution, the SSIS project), the template package
+   and the new project's name, then **Save and Generate**. These are remembered, so later
+   runs need one click.
+3. The scaffolder retrieves the metadata, builds the staging and GUID scripts, manifest and
+   metadata seed in memory, and writes the SSIS project to a new `SSIS-<date-time>` folder
+   inside the output folder. The scaffolder run it was built from (scripts, `manifest.json`,
+   `meta_seed.sql`) is saved in that folder's `Scaffolder` subfolder.
+4. Review the summary (first entry in the file list) and `harnessgen-report.json`, then
+   build the project in Visual Studio with SSIS Projects and KingswaySoft.
+
+**SSIS Settings...** changes the reference project, or builds a project from a previous
+scaffolder run without connecting to Dataverse: by default the `Scaffolder\manifest.json` of
+the newest `SSIS-*` folder, or any `manifest.json` saved with **Export > Scaffolder run**.
+
+**Sensitive data** in SSIS Settings sets the new project's protection level:
+
+- Unticked (default): the reference's protection level is kept and its encrypted values, such as
+  the Dataverse client secret, are copied unchanged. With the usual *EncryptSensitiveWithUserKey*
+  they only open for the person who saved the reference.
+- Ticked (*Don't save passwords or secrets*): the project and every package are saved with
+  *DontSaveSensitive* and every stored password and secret is removed. Anyone can open the
+  project and it is safe to commit. Supply the secret when deploying, in the SSIS catalog's
+  connection manager settings (for example `CM.Dynamics CRM Connection Manager.ClientSecret`) or
+  a SQL Agent job step; every connection setting can be overridden there per environment. To run
+  in Visual Studio, re-enter the secret after opening the project (it is not saved).
+
+The tested example is the current `MigrationHarness2.sln` in the
+`MigrationHarness1 - Copy` directory, its `MigrationHarness1.dtproj`, and
+`01b - Harness.dtsx`. Its GUID table holds just the record GUID and legacy ID, matching
+the GUID scripts: the create destination's Default Output writes `SavedRecordId` and the
+legacy ID. (An OLE DB Command on the update branch that updates the GUID table by
+`SavedRecordId` is still accepted, but the current reference has none.) The package also
+holds a `Stage Case Type` Execute SQL task that runs `Queries\stage_jn_CaseType.sql`; it is
+the template for every table's Stage task and SQL.
+
+Generated layout per scaffolder file group:
+- `NNa - Staging`: Create Staging Tables, then one `Stage <Table>` task per table, loading
+  staging from the legacy database with the SQL in the output's `Queries` folder (lookups
+  are resolved through the referenced tables' GUID tables).
+- `NNb - Harness`: Create GUID Tables, then one `Migrate <Table>` data flow per table.
+- `00 - Error and UpdateTime Tables` also creates every GUID table, so staging SQL can join
+  them on a first run. `Run_Migration` runs each group's staging package, then its harness
+  package, tier by tier, then the deferred updates.
+
+Other project-deployment-model SSIS projects are accepted when their selected
+template package contains the supported single `Migrate <Table>` data flow:
+staging source, create/update split, KingswaySoft destinations, GUID create output,
+error outputs and optional GUID update command, plus an optional `Stage <Table>` task.
+This is not an arbitrary SSIS project converter; unsupported templates fail with an
+explanation. KingswaySoft destination settings, including the automation options (bypass
+Power Automate flows, disable plugins, workflows and auditing), are copied to every table.
+
+Project connection manager files and required package connections are retained.
+Credentials protected by the original user's Windows identity may require that
+same identity or reconfiguration on another machine. Source files are not changed.
+The integration refuses a nonempty output folder and does not execute SQL or
+Dataverse writes. Without a Stage task template, staging packages are not run by
+`Run_Migration.dtsx` because they recreate staging tables; load legacy data first.
+
+Tables without usable legacy match keys remain explicitly skipped by the existing
+engine. The current sample generates 20 packages: 9 staging, 8 harness, setup,
+deferred updates and the entry point, with migration flows for 42 of 113 tables.
+Do not treat successful generation as complete coverage of all selected tables.
+
+### Build and verify the integration
+
+```powershell
+dotnet build DataverseMigrationScaffolder/DataverseMigrationScaffolder.csproj -c Release
+dotnet build tests/HarnessIntegration/HarnessIntegration.csproj -c Release
+# Test the same integration entry point used by the dialog, using an EMPTY folder:
+tests/HarnessIntegration/bin/Release/net48/HarnessIntegration.exe manifest.json reference.sln template.dtsx new-output
+./nuget.exe pack DataverseMigrationScaffolder.nuspec -OutputDirectory artifacts
+```
+
+The test checks solution/project discovery, in-process generation, unchanged reference
+files, byte-identical connection managers, invalid package rejection, nonempty-output
+refusal and error reporting. No real SSIS project or connection string is embedded.
+
+The C# generator is checked against the original Python generator
+(`../migration-harness-generator`): `tests/HarnessParity` builds a `harnessgen.exe` with
+the Python tool's arguments, and `python tools/parity.py <harnessgen.exe>` in the
+generator repository runs both on the same inputs and requires every output file to be
+byte-identical (and the same errors for bad inputs).
+
+```powershell
+dotnet build tests/HarnessParity/HarnessParity.csproj -c Release
+cd ../migration-harness-generator
+python tools/parity.py ../DataverseMigrationScaffolder/tests/HarnessParity/bin/Release/net48/harnessgen.exe
 ```
 
 ## License
