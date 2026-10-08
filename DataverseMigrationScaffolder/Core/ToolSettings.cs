@@ -67,12 +67,10 @@ namespace DataverseMigrationScaffolder.Core
         /// <summary>true = DROP TABLE IF EXISTS + CREATE; false = CREATE only if missing.</summary>
         public bool StagingDropRecreate { get; set; } = true;
         public bool GuidDropRecreate { get; set; } = false;
-        /// <summary>Emit guarded nonclustered indexes on every match-key column.</summary>
-        public bool IndexLegacyIdColumns { get; set; } = false;
 
         /// <summary>
         /// Comma-separated suffixes identifying "match key" columns (carried into guid tables
-        /// and indexed by the index option). Default "legacyid" matches new_legacyid,
+        /// and made UNIQUE in staging and GUID tables). Default "legacyid" matches new_legacyid,
         /// contoso_legacyid, etc.
         /// </summary>
         public string MatchKeySuffixes { get; set; } = "legacyid";

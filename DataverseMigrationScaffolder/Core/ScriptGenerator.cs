@@ -182,6 +182,10 @@ namespace DataverseMigrationScaffolder.Core
             lines.Add(Tuple.Create("    [ownerid] NVARCHAR(100)", (string)null));
             lines.Add(Tuple.Create("    [owneridtype] NVARCHAR(100)", (string)null));
             lines.Add(Tuple.Create("    [statecode] INT", (string)null));
+            // Which staging table a row came from, so the migration's error rows can name their
+            // table. The Stage SQL never inserts it, so every row gets the default.
+            lines.Add(Tuple.Create(string.Format("    [tablename] NVARCHAR(100) DEFAULT '{0}{1}'",
+                _settings.StagingPrefix, table.SchemaName.Replace("'", "''")), (string)null));
 
             // Each legacy record is staged once: the harness matches and records GUIDs by the
             // legacy id, so a duplicate would be created twice in Dataverse. The constraint's
@@ -269,9 +273,18 @@ namespace DataverseMigrationScaffolder.Core
             //    table actually has one in Dataverse. A GUID table is only a legacy id -> GUID
             //    crosswalk: lookups are resolved by joining on these two columns, so nothing
             //    else (primary name, lookups, state) is stored.
-            foreach (var col in table.Columns.Where(c => _settings.IsMatchKey(c.Name)))
+            var matchKeys = table.Columns.Where(c => _settings.IsMatchKey(c.Name)).ToList();
+            foreach (var col in matchKeys)
             {
                     lines.Add(string.Format("        [{0}] {1} NULL", col.Name, col.SqlType));
+            }
+
+            // 3. Each legacy record maps to one Dataverse record: a second row for the same legacy
+            //    id would make lookups ambiguous. The constraint's index also serves the lookup joins.
+            foreach (var col in matchKeys)
+            {
+                    lines.Add(string.Format("        CONSTRAINT [UQ_{0}{1}_{2}] UNIQUE ([{2}])",
+                        _settings.GuidPrefix, table.SchemaName, col.Name));
             }
 
             if (_settings.GuidDropRecreate)
@@ -289,25 +302,6 @@ namespace DataverseMigrationScaffolder.Core
                     sb.AppendLine(string.Join("," + Environment.NewLine, lines));
                     sb.AppendLine("    );");
                     sb.AppendLine("END");
-            }
-
-            if (_settings.IndexLegacyIdColumns)
-            {
-                    EmitLegacyIdIndexes(sb, fullName, _settings.GuidPrefix + table.SchemaName, table);
-            }
-        }
-
-        // ---------------------------------------------------------------- indexes
-
-        private void EmitLegacyIdIndexes(StringBuilder sb, string fullName, string bareName, TableModel table)
-        {
-            foreach (var col in table.Columns.Where(c => _settings.IsMatchKey(c.Name)))
-            {
-                    var indexName = string.Format("IX_{0}_{1}", bareName, col.Name);
-                    sb.AppendLine(string.Format(
-                    "IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE [name] = N'{0}' AND [object_id] = OBJECT_ID(N'{1}'))",
-                    indexName, fullName));
-                    sb.AppendLine(string.Format("    CREATE NONCLUSTERED INDEX [{0}] ON {1}([{2}]);", indexName, fullName, col.Name));
             }
         }
 
@@ -347,7 +341,7 @@ namespace DataverseMigrationScaffolder.Core
             w.Prop("guidGenerated", _settings.GenerateGuid);
             w.Prop("stagingMode", _settings.StagingDropRecreate ? "dropAndRecreate" : "createIfMissing");
             w.Prop("guidMode", _settings.GuidDropRecreate ? "dropAndRecreate" : "createIfMissing");
-            w.Prop("matchKeyIndexes", _settings.IndexLegacyIdColumns);
+            w.Prop("matchKeyIndexes", true);   // staging and GUID match keys are UNIQUE, so always indexed
             w.StringArray("dependencyRankingExclusions",
                 _settings.GetDependencyExclusions().OrderBy(x => x, StringComparer.OrdinalIgnoreCase));
             w.EndObject();

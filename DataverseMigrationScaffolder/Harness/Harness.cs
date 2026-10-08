@@ -252,15 +252,30 @@ namespace DataverseMigrationScaffolder.HarnessGen
 
         /// <summary>CREATE TABLE for the error table the reference flow writes to, from the columns its
         /// error destination declares; null if the reference has no error destination.</summary>
+        private static bool IsErrorDestination(XmlElement component)
+        {
+            var props = Xml.Props(component);
+            if (!props.Has("OpenRowset")) return false;
+            var rowset = props.Text("OpenRowset").Replace(" ", "").ToLowerInvariant();
+            return rowset == ErrorTable.ToLowerInvariant() || rowset == "dbo.error" || rowset == "[error]" || rowset == "error";
+        }
+
+        /// <summary>Reference columns (lower case) the error destinations write, such as tablename.</summary>
+        public static HashSet<string> ErrorColumns(byte[] templateXml, Table reference)
+        {
+            var doc = Xml.Parse(templateXml);
+            var read = new HashSet<string>(reference.Columns.Select(c => c.Name.ToLowerInvariant()), StringComparer.Ordinal);
+            return new HashSet<string>(Xml.ByTag(doc, "component").Where(IsErrorDestination)
+                .SelectMany(c => Xml.ByTag(c, "inputColumn")).Select(i => i.GetAttribute("cachedName").ToLowerInvariant())
+                .Where(read.Contains), StringComparer.Ordinal);
+        }
+
         public static string ErrorTableSql(byte[] templateXml)
         {
             var doc = Xml.Parse(templateXml);
             foreach (var component in Xml.ByTag(doc, "component"))
             {
-                var props = Xml.Props(component);
-                if (!props.Has("OpenRowset")) continue;
-                var rowset = props.Text("OpenRowset").Replace(" ", "").ToLowerInvariant();
-                if (rowset != ErrorTable.ToLowerInvariant() && rowset != "dbo.error" && rowset != "[error]" && rowset != "error") continue;
+                if (!IsErrorDestination(component)) continue;
                 var mapped = new HashSet<string>(Xml.ByTag(component, "inputColumn").Select(i => i.GetAttribute("externalMetadataColumnId")), StringComparer.Ordinal);
                 var lines = new List<string>();
                 foreach (var ext in Xml.ByTag(component, "externalMetadataColumn"))
@@ -533,9 +548,20 @@ namespace DataverseMigrationScaffolder.HarnessGen
             var updateOnly = Xml.Parse(templateXml);
             RemoveCreateBranch(updateOnly.DocumentElement);
             var updateXml = Xml.ToXml(updateOnly);
+            // Columns the error destinations write (tablename) are read from staging too, so failed
+            // lookup updates are recorded like failed migrations.
+            var logged = ErrorColumns(updateXml, reference);
             foreach (var p in passes)
             {
-                var view = DeferredView(p.Table, p.UpdateColumns).With(displayName: labels[p.Table.LogicalName]);
+                var view = DeferredView(p.Table, p.UpdateColumns);
+                if (logged.Count > 0)
+                {
+                    var have = new HashSet<string>(view.Columns.Select(c => c.Name.ToLowerInvariant()), StringComparer.Ordinal);
+                    var staged = WithStagingExtras(p.Table, reference, dbColumns ?? new Dictionary<string, List<Tuple<string, string>>>());
+                    view = view.With(columns: view.Columns.Concat(staged.Columns.Where(c => logged.Contains(c.Name.ToLowerInvariant())
+                                                                                      && !have.Contains(c.Name.ToLowerInvariant()))).ToList());
+                }
+                view = view.With(displayName: labels[p.Table.LogicalName]);
                 var rendered = TableTask(updateXml, label, reference, view, packageName, seed);
                 var root = rendered.Item1;
                 RenameTask(root, "Migrate " + labels[p.Table.LogicalName], "Update " + labels[p.Table.LogicalName] + " Lookups");

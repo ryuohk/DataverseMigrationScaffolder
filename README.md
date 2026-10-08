@@ -70,9 +70,8 @@ add a post-build event to copy the DLL into the plugins folder.
    - **Table list**: Filter, Category and Checked only narrow the grid.
    - **Staging tables**: table-name prefix, *Drop & recreate* or *Create if missing* mode,
      **Schema** (default `dbo`) and **Tables per file** (default 40).
-   - **GUID tables**: prefix and mode, **Match key** suffixes (default `legacyid`) and
-     **Index match keys** (guarded nonclustered index on every GUID table match-key column).
-     Staging match keys are always indexed by their `UNIQUE` constraint.
+   - **GUID tables**: prefix and mode, and **Match key** suffixes (default `legacyid`).
+     Match keys are `UNIQUE` in both staging and GUID tables, which also indexes them.
 
 6. Step 4: **Generate SSIS Project** builds the migration harness (see below). **Export**
    saves files to the output folder without a project:
@@ -157,6 +156,9 @@ files, so the two can never drift apart.
 
 Fixed staging boilerplate, always appended in this order: `overriddencreatedon`, `ownerid`,
 `owneridtype`, `statecode INT`. These are standard Dataverse concepts valid for any table.
+Last comes `tablename NVARCHAR(100) DEFAULT '<staging table>'` (for example
+`DEFAULT 'stage_jn_PartyType'`): the Stage SQL never inserts it, so every row names the staging
+table it came from, and the migration harness can write it to the error table.
 Everything else, including custom audit columns like legacyid fields, is emitted only if it
 exists in the table's metadata. Change the block in `Core/ScriptGenerator.cs`.
 
@@ -167,11 +169,15 @@ metadata rows (regenerated from the money column instead). Edit `GlobalSkip` in
 `Core/MetadataMapper.cs`.
 
 **GUID tables** contain only the `<primaryid>` as `VARCHAR(100)` and any `*legacyid` column the
-table actually has in Dataverse (indexed when match-key indexes are on). They are a legacy id ->
+table actually has in Dataverse, which is `UNIQUE` (`CONSTRAINT [UQ_<guid prefix><table>_<column>]`):
+each legacy record maps to exactly one Dataverse record. They are a legacy id ->
 GUID crosswalk: staging SQL resolves lookups by joining on these two columns, and the migration
 harness writes them as records are created. Primary name, lookup and state columns are not
 stored; they live in staging and Dataverse. GUID tables created by earlier versions keep their
 extra columns (the script never alters an existing GUID table); they are nullable and unused.
+In *Create if missing* mode an existing GUID table also does not get the `UNIQUE` constraint; add it
+with `ALTER TABLE <guid table> ADD CONSTRAINT [UQ_<guid table>_<column>] UNIQUE ([<column>])` once
+any duplicate legacy ids are removed.
 
 **Column inclusion rule (all tables):** with the Default solution selected, every non-system
 attribute is included. With a specific solution selected, only that solution's components are

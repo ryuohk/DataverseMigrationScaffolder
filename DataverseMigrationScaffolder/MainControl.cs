@@ -55,7 +55,6 @@ namespace DataverseMigrationScaffolder
         private TextBox _txtMatchKey;
         private ComboBox _cboStagingMode;
         private ComboBox _cboGuidMode;
-        private CheckBox _chkIndexes;
         private DataGridView _grid;
         private ListBox _lstFiles;
         private TextBox _txtPreview;
@@ -251,13 +250,12 @@ namespace DataverseMigrationScaffolder
 
             var lblMatchKey = new Label { Text = "Match key:", Location = new Point(362, 85), AutoSize = true };
             _txtMatchKey = new TextBox { Location = new Point(430, 82), Width = 84 };
-            _chkIndexes = new CheckBox { Text = "Index match keys", Location = new Point(528, 84), AutoSize = true };
 
             grpStep3.Controls.AddRange(new Control[]
             {
                 lblList, lblFilter, _txtFilter, lblCategory, _cboCategory, _chkCheckedOnly,
                 lblStaging, lblStagingPrefix, _txtStagingPrefix, _cboStagingMode, lblSchema, _txtSchema, lblBatch, _numBatch,
-                lblGuid, lblGuidPrefix, _txtGuidPrefix, _cboGuidMode, lblMatchKey, _txtMatchKey, _chkIndexes
+                lblGuid, lblGuidPrefix, _txtGuidPrefix, _cboGuidMode, lblMatchKey, _txtMatchKey
             });
 
             pnlSteps34.Controls.Add(grpStep3);
@@ -313,7 +311,8 @@ namespace DataverseMigrationScaffolder
                 lblBatch, _numBatch);
 
             // Step 3: GUID tables
-            Tips.Set(_tip, "GUID tables hold two columns for every record created in Dataverse: its new record ID and its legacy ID. "
+            Tips.Set(_tip, "GUID tables hold two columns for every record created in Dataverse: its new record ID and its legacy ID, which "
+                + "is UNIQUE, so each legacy record maps to one Dataverse record. "
                 + "Tables loaded later use them to turn the legacy IDs in lookup columns into Dataverse record IDs, and the Deferred "
                 + "Updates package uses them to fill in lookups that had to wait.",
                 lblGuid);
@@ -327,9 +326,6 @@ namespace DataverseMigrationScaffolder
                 + "is the match key. The default, legacyid, matches new_legacyid, contoso_legacyid and so on.\n"
                 + "Tables without a match-key column are left out of the SSIS project.",
                 lblMatchKey, _txtMatchKey);
-            Tips.Set(_tip, "Adds an index on the legacy ID column of every GUID table. This speeds up lookup resolution for large tables "
-                + "and slightly slows inserts. Staging tables are always indexed by their UNIQUE constraint.",
-                _chkIndexes);
 
             // Step 4
             Tips.Set(_tip, "Builds the complete SSIS migration project for the checked tables.\n"
@@ -723,7 +719,6 @@ namespace DataverseMigrationScaffolder
             _txtMatchKey.Text = _settings.MatchKeySuffixes ?? "legacyid";
             _cboStagingMode.SelectedIndex = _settings.StagingDropRecreate ? 0 : 1;
             _cboGuidMode.SelectedIndex = _settings.GuidDropRecreate ? 0 : 1;
-            _chkIndexes.Checked = _settings.IndexLegacyIdColumns;
 
             UpdateOutputFolderLabel();
         }
@@ -744,7 +739,6 @@ namespace DataverseMigrationScaffolder
             _settings.MatchKeySuffixes = _txtMatchKey.Text == null ? "" : _txtMatchKey.Text.Trim();
             _settings.StagingDropRecreate = _cboStagingMode.SelectedIndex == 0;
             _settings.GuidDropRecreate = _cboGuidMode.SelectedIndex == 0;
-            _settings.IndexLegacyIdColumns = _chkIndexes.Checked;
         }
 
         public override void ClosingPlugin(PluginCloseInfo info)
