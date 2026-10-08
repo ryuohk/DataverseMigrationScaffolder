@@ -406,6 +406,16 @@ namespace DataverseMigrationScaffolder.HarnessGen
             return columnNames.Get(name) ?? name;
         }
 
+        /// <summary>Reference column names (lower case) as the target's: the reference's record id, primary
+        /// name and match key stand for the target's own (a reference that leaves out its primary name
+        /// leaves out every table's), other columns keep their name.</summary>
+        private static HashSet<string> AsTarget(IEnumerable<string> names, OrderedMap columnNames)
+        {
+            var toTarget = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var kv in columnNames) toTarget[kv.Key.ToLowerInvariant()] = kv.Value.ToLowerInvariant();
+            return new HashSet<string>(names.Select(n => toTarget.TryGetValue(n, out var t) ? t : n), StringComparer.Ordinal);
+        }
+
         private static bool LeavesOutShared(Dictionary<string, XmlElement> byName, HashSet<string> refColumns, HashSet<string> unmapped,
                                             HashSet<string> optional)
         {
@@ -440,14 +450,16 @@ namespace DataverseMigrationScaffolder.HarnessGen
             }
             else if (unmapped.Count > 0 && new HashSet<string>(byName.Keys).SetEquals(refColumns.Where(n => !unmapped.Contains(n))))
             {
-                selected = columns.Where(c => !unmapped.Contains(c.Name.ToLowerInvariant())).ToList();
+                var dropped = AsTarget(unmapped, columnNames);
+                selected = columns.Where(c => !dropped.Contains(c.Name.ToLowerInvariant())).ToList();
             }
             else if (LeavesOutShared(byName, refColumns, unmapped, optional))
             {
                 // Every column but a few shared ones (a key-only collection keeps far fewer than it
                 // leaves out, and keeps the keys).
                 var leftOut = new HashSet<string>(refColumns.Where(n => !byName.ContainsKey(n)), StringComparer.Ordinal);
-                selected = columns.Where(c => !leftOut.Contains(c.Name.ToLowerInvariant())).ToList();
+                var dropped = AsTarget(leftOut, columnNames);
+                selected = columns.Where(c => !dropped.Contains(c.Name.ToLowerInvariant())).ToList();
             }
             else
             {

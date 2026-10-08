@@ -157,7 +157,7 @@ files, so the two can never drift apart.
 Fixed staging boilerplate, always appended in this order: `overriddencreatedon`, `ownerid`,
 `owneridtype`, `statecode INT`. These are standard Dataverse concepts valid for any table.
 Last comes `tablename NVARCHAR(100) DEFAULT '<staging table>'` (for example
-`DEFAULT 'stage_jn_PartyType'`): the Stage SQL never inserts it, so every row names the staging
+`DEFAULT 'stage_new_Project'`): the Stage SQL never inserts it, so every row names the staging
 table it came from, and the migration harness can write it to the error table.
 Everything else, including custom audit columns like legacyid fields, is emitted only if it
 exists in the table's metadata. Change the block in `Core/ScriptGenerator.cs`.
@@ -236,9 +236,10 @@ script or manifest files need to be written first.
 
 1. Load tables, check the ones to migrate, and set the output folder (steps 1-3).
 2. Click **Generate SSIS Project**. The first time, the SSIS settings open: choose the
-   reference `.dtproj` or `.sln` (for a solution, the SSIS project), the template package
-   and the new project's name, then **Save and Generate**. These are remembered, so later
-   runs need one click.
+   **built-in template** and enter your SQL Server and the staging and legacy database names
+   (the Dataverse URL defaults to the connected environment), or choose **my own reference
+   project** and its `.dtproj` or `.sln`, template package and so on (see below). Name the new
+   project, then **Save and Generate**. These are remembered, so later runs need one click.
 3. The scaffolder retrieves the metadata, builds the staging and GUID scripts, manifest and
    metadata seed in memory, and writes the SSIS project to a new `SSIS-<date-time>` folder
    inside the output folder. The scaffolder run it was built from (scripts, `manifest.json`,
@@ -246,7 +247,29 @@ script or manifest files need to be written first.
 4. Review the summary (first entry in the file list) and `harnessgen-report.json`, then
    build the project in Visual Studio with SSIS Projects and KingswaySoft.
 
-**SSIS Settings...** changes the reference project, or builds a project from a previous
+### Built-in template or your own reference project
+
+The generated project is cloned from a *reference project* that shows how one table is
+migrated. Every table name, column and publisher prefix in the result comes from your
+Dataverse environment, not from the reference.
+
+- **Built-in template** (no files needed): the plugin carries a reference project for a neutral
+  sample table (`new_category`, with `new_` columns). It has the recommended KingswaySoft
+  settings (owner, state and audit columns, automation options), a `Stage <Table>` task with
+  its staging SQL, and error logging that records each row's staging `tablename`. When you
+  generate, it is unpacked to a temporary folder with your SQL Server, staging and legacy
+  database names and Dataverse URL written into its connections and staging SQL, and removed
+  afterwards. The Staging and Legacy connections use Windows authentication. Enter the
+  Dataverse client id and secret in Visual Studio after opening the project; the plugin never
+  stores them.
+- **My own reference project**: a hand-built SSIS project of yours, with its own connections and
+  settings, copied the same way. Its template package must contain the supported single
+  `Migrate <Table>` data flow (see below). If the table it migrates is not among the tables you
+  generate, put a `template.json` next to its `.dtproj` naming that table's primary name and
+  legacy key (`{"table": "...", "primaryName": "...", "matchKey": "..."}`), as the built-in
+  template does.
+
+**SSIS Settings...** changes the template, or builds a project from a previous
 scaffolder run without connecting to Dataverse: by default the `Scaffolder\manifest.json` of
 the newest `SSIS-*` folder, or any `manifest.json` saved with **Export > Scaffolder run**.
 
@@ -262,14 +285,12 @@ the newest `SSIS-*` folder, or any `manifest.json` saved with **Export > Scaffol
   a SQL Agent job step; every connection setting can be overridden there per environment. To run
   in Visual Studio, re-enter the secret after opening the project (it is not saved).
 
-The tested example is the current `MigrationHarness2.sln` in the
-`MigrationHarness1 - Copy` directory, its `MigrationHarness1.dtproj`, and
-`01b - Harness.dtsx`. Its GUID table holds just the record GUID and legacy ID, matching
-the GUID scripts: the create destination's Default Output writes `SavedRecordId` and the
-legacy ID. (An OLE DB Command on the update branch that updates the GUID table by
-`SavedRecordId` is still accepted, but the current reference has none.) The package also
-holds a `Stage Case Type` Execute SQL task that runs `Queries\stage_jn_CaseType.sql`; it is
-the template for every table's Stage task and SQL.
+The built-in template's package, `01b - Harness.dtsx`, is the model for your own: its GUID table
+holds just the record GUID and legacy ID, matching the GUID scripts, and the create
+destination's Default Output writes `SavedRecordId` and the legacy ID. (An OLE DB Command on the
+update branch that updates the GUID table by `SavedRecordId` is also accepted.) The package also
+holds a `Stage Category` Execute SQL task that runs `Queries\stage_new_Category.sql`; it is the
+template for every table's Stage task and SQL.
 
 Generated layout per scaffolder file group:
 - `NNa - Staging`: Create Staging Tables, then one `Stage <Table>` task per table, loading

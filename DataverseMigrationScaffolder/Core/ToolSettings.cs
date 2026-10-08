@@ -135,6 +135,31 @@ namespace DataverseMigrationScaffolder.Core
         /// reference's protection level and copy its encrypted values unchanged.</summary>
         public bool HarnessDontSaveSensitive { get; set; } = false;
 
+        /// <summary>"builtin" (the template inside the plugin), "reference" (HarnessReference), or empty
+        /// until chosen in SSIS Settings.</summary>
+        public string HarnessTemplate { get; set; } = "";
+        public const string BuiltInTemplate = "builtin";
+        public const string OwnTemplate = "reference";
+
+        /// <summary>The built-in template's connections: the SQL Server holding the staging and legacy
+        /// databases, their names, and the Dataverse URL (empty = the connected environment's).</summary>
+        public string HarnessSqlServer { get; set; } = "localhost";
+        public string HarnessStagingDatabase { get; set; } = "Staging";
+        public string HarnessLegacyDatabase { get; set; } = "Legacy";
+        public string HarnessDataverseUrl { get; set; } = "";
+
+        /// <summary>True when projects are generated from the built-in template: chosen in SSIS Settings,
+        /// or not yet chosen and no reference project is remembered.</summary>
+        [System.Xml.Serialization.XmlIgnore]
+        public bool UsesBuiltInTemplate
+        {
+            get
+            {
+                return HarnessTemplate == BuiltInTemplate
+                       || (string.IsNullOrEmpty(HarnessTemplate) && string.IsNullOrWhiteSpace(HarnessReference));
+            }
+        }
+
         /// <summary>A copy that produces every output the SSIS generator reads (scripts, manifest, meta
         /// seed) whatever the user chose to save; prefixes, modes and match keys are kept.</summary>
         public ToolSettings ForHarness()

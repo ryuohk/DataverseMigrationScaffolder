@@ -1,0 +1,5 @@
+{
+  "table": "new_category",
+  "primaryName": "new_category",
+  "matchKey": "new_legacyid"
+}

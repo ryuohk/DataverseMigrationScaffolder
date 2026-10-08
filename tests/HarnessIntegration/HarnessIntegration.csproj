@@ -9,5 +9,6 @@
     <Compile Include="../../DataverseMigrationScaffolder/Core/ToolSettings.cs" Link="ToolSettings.cs" />
     <Compile Include="../../DataverseMigrationScaffolder/Core/Models.cs" Link="Models.cs" />
     <Compile Include="../../DataverseMigrationScaffolder/Harness/*.cs" LinkBase="Harness" />
+    <EmbeddedResource Include="../../DataverseMigrationScaffolder/BuiltInTemplate/**/*" LogicalName="BuiltInTemplate/%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 </Project>

@@ -345,6 +345,9 @@ namespace DataverseMigrationScaffolder.HarnessGen
 
             var refKey = reference.MatchKeys[0];
             var key = table.MatchKeys[0];
+            // The reference's own prefix strips its key (a new_ template migrating contoso_ tables).
+            var refPrefixes = new HashSet<string>(prefixes, StringComparer.Ordinal);
+            refPrefixes.UnionWith(PublisherPrefixes(new[] { reference }));
             var subst = new Substituter(new[]
             {
                 Pair(reference.GuidTable, table.GuidTable),
@@ -352,7 +355,7 @@ namespace DataverseMigrationScaffolder.HarnessGen
                 Pair(reference.StagingTable, table.StagingTable),
                 Pair(Metadata.ObjectName(reference.StagingTable), Metadata.ObjectName(table.StagingTable)),
                 Pair(refKey, key),
-                Pair(LegacyNameFor(refKey, prefixes, template.StripPrefix), LegacyNameFor(key, prefixes, template.StripPrefix)),
+                Pair(LegacyNameFor(refKey, refPrefixes, template.StripPrefix), LegacyNameFor(key, prefixes, template.StripPrefix)),
             });
             var rest = subst.Apply(template.Rest).Trim();
             var lines = new List<string> { "INSERT INTO " + table.StagingTable + " (" };
