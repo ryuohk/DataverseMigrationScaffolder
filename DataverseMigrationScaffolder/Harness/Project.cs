@@ -227,10 +227,13 @@ namespace DataverseMigrationScaffolder.HarnessGen
             var flowXml = split.Item1;
             var stageParts = split.Item2;
             var inferred = Reference.Infer(flowXml, template.ReferencePackage, manifest.StagingPrefix, manifest.Table(options.ReferenceTable ?? ""));
-            if (string.IsNullOrEmpty(options.ReferenceTable) && manifest.Table(inferred.Item1.LogicalName) != null)
-                // The manifest's entry for the table the package migrates supplies its primary name
-                // and match key; the package alone cannot always tell them apart.
-                inferred = Reference.Infer(flowXml, template.ReferencePackage, manifest.StagingPrefix, manifest.Table(inferred.Item1.LogicalName));
+            var hint = (string.IsNullOrEmpty(options.ReferenceTable) ? manifest.Table(inferred.Item1.LogicalName) : null)
+                       ?? TemplateHint(template.Directory, inferred.Item1.LogicalName);
+            if (hint != null)
+                // The manifest's entry for the table the package migrates (or the template's own
+                // template.json, when that table is not migrated) supplies its primary name and match
+                // key; the package alone cannot always tell them apart.
+                inferred = Reference.Infer(flowXml, template.ReferencePackage, manifest.StagingPrefix, hint);
             var reference = inferred.Item1;
             var taskName = inferred.Item2;
             if (!string.IsNullOrEmpty(options.ReferenceTable) && options.ReferenceTable.ToLowerInvariant() != reference.LogicalName.ToLowerInvariant())
@@ -247,7 +250,11 @@ namespace DataverseMigrationScaffolder.HarnessGen
             }
             var stagingConnection = StagingConnection(flowXml, support, template.ReferencePackage);
             var prefixes = Stage.PublisherPrefixes(manifest.Tables);
-            var stageTemplate = stageParts != null ? Stage.ParseTemplate(stageParts, reference, prefixes, template.ReferencePackage) : null;
+            // The template's sample table may use another publisher prefix than the migrated tables
+            // (the built-in template uses new_), so its own prefix counts when reading its SQL.
+            var templatePrefixes = new HashSet<string>(prefixes, StringComparer.Ordinal);
+            templatePrefixes.UnionWith(Stage.PublisherPrefixes(new[] { reference }));
+            var stageTemplate = stageParts != null ? Stage.ParseTemplate(stageParts, reference, templatePrefixes, template.ReferencePackage) : null;
             var byName = new Dictionary<string, Table>(StringComparer.Ordinal);
             foreach (var t in manifest.Tables) byName[t.LogicalName.ToLowerInvariant()] = t;
 
@@ -593,6 +600,29 @@ namespace DataverseMigrationScaffolder.HarnessGen
                 throw new GeneratorException("Output folder " + output + " holds unexpected files: " + (diff.Count > 0 ? string.Join(", ", diff) : "(none)"));
             }
             return result;
+        }
+
+        public const string TemplateHintName = "template.json";
+
+        /// <summary>The reference table's primary name and match key from template.json next to the
+        /// .dtproj, for a template whose sample table is not in the manifest (the built-in one).</summary>
+        internal static Table TemplateHint(string directory, string logicalName)
+        {
+            var path = Path.Combine(directory, TemplateHintName);
+            if (!File.Exists(path)) return null;
+            JObj data;
+            try { data = Json.Parse(Metadata.ReadText(path)) as JObj; }
+            catch (Exception ex) when (!(ex is GeneratorException)) { throw new GeneratorException(path + " is not valid JSON: " + ex.Message, ex); }
+            if (data == null) throw new GeneratorException(path + " is not valid JSON: expected an object");
+            if (((data.Get("table") as string) ?? "").ToLowerInvariant() != logicalName.ToLowerInvariant()) return null;
+            var primaryName = data.Get("primaryName") as string;
+            var matchKey = data.Get("matchKey") as string;
+            return new Table
+            {
+                LogicalName = logicalName, SchemaName = "", DisplayName = "", Tier = 0, StagingTable = "", GuidTable = "", PrimaryId = "",
+                PrimaryName = string.IsNullOrEmpty(primaryName) ? null : primaryName,
+                MatchKeys = string.IsNullOrEmpty(matchKey) ? new List<string>() : new List<string> { matchKey },
+            };
         }
 
         private static List<XmlElement> PackageEntries(XmlDocument doc)

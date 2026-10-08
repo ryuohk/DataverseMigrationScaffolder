@@ -57,10 +57,145 @@ namespace DataverseMigrationScaffolder.Core
             return null;
         }
 
-        /// <summary>True when the remembered SSIS settings can be used without asking.</summary>
+        /// <summary>Why the built-in template's connection settings cannot be used, or null.</summary>
+        public static string BuiltInProblem(string server, string stagingDatabase, string legacyDatabase, string output, string name)
+        {
+            if (string.IsNullOrWhiteSpace(server)) return "Enter the SQL Server that holds the staging and legacy databases.";
+            if (string.IsNullOrWhiteSpace(stagingDatabase)) return "Enter the name of the staging database.";
+            if (string.IsNullOrWhiteSpace(legacyDatabase)) return "Enter the name of the legacy database.";
+            if (string.IsNullOrWhiteSpace(output)) return "Choose a new output folder.";
+            if (Directory.Exists(output) && Directory.EnumerateFileSystemEntries(output).Any())
+                return "Choose a new, empty output folder. Existing output is not replaced by this integration.";
+            if (string.IsNullOrWhiteSpace(name)) return "Enter a name for the new SSIS project.";
+            return null;
+        }
+
+        /// <summary>True when the remembered SSIS settings can be used without asking. The template choice
+        /// must have been made once in SSIS Settings.</summary>
         public static bool SettingsComplete(ToolSettings settings)
         {
-            return Problem(settings.HarnessProjectFile, settings.HarnessPackage, "x", settings.HarnessProjectName) == null;
+            if (string.IsNullOrEmpty(settings.HarnessTemplate)) return false;
+            return settings.UsesBuiltInTemplate
+                ? BuiltInProblem(settings.HarnessSqlServer, settings.HarnessStagingDatabase, settings.HarnessLegacyDatabase, "x",
+                                 settings.HarnessProjectName) == null
+                : Problem(settings.HarnessProjectFile, settings.HarnessPackage, "x", settings.HarnessProjectName) == null;
+        }
+
+        // ---- built-in template ------------------------------------------------------------------
+
+        private const string BuiltInResources = "BuiltInTemplate/";
+        public const string BuiltInProjectFile = "MigrationHarnessTemplate/MigrationHarnessTemplate.dtproj";
+        public const string BuiltInPackage = "01b - Harness.dtsx";
+        /// <summary>The Dataverse URL the built-in template uses when none is known.</summary>
+        public const string PlaceholderDataverseUrl = "https://yourorg.crm.dynamics.com";
+
+        /// <summary>The template to generate from: the remembered reference project, or the built-in
+        /// template unpacked with the remembered connection settings (deleted on Dispose).</summary>
+        public static HarnessTemplate ResolveTemplate(ToolSettings settings, string connectedUrl)
+        {
+            if (!settings.UsesBuiltInTemplate) return new HarnessTemplate(settings.HarnessProjectFile, settings.HarnessPackage, null);
+            var url = !string.IsNullOrWhiteSpace(settings.HarnessDataverseUrl) ? settings.HarnessDataverseUrl
+                      : !string.IsNullOrWhiteSpace(connectedUrl) ? connectedUrl : PlaceholderDataverseUrl;
+            return UnpackBuiltIn(settings.HarnessSqlServer, settings.HarnessStagingDatabase, settings.HarnessLegacyDatabase, url);
+        }
+
+        /// <summary>Unpack the built-in template to a new temporary folder, pointed at these connections.</summary>
+        public static HarnessTemplate UnpackBuiltIn(string server, string stagingDatabase, string legacyDatabase, string dataverseUrl)
+        {
+            var problem = BuiltInProblem(server, stagingDatabase, legacyDatabase, "x", "x");
+            if (problem != null) throw new ArgumentException(problem);
+            server = server.Trim();
+            stagingDatabase = stagingDatabase.Trim();
+            legacyDatabase = legacyDatabase.Trim();
+            dataverseUrl = (dataverseUrl ?? "").Trim().TrimEnd('/');
+            if (dataverseUrl.Length == 0) dataverseUrl = PlaceholderDataverseUrl;
+
+            var root = Path.Combine(Path.GetTempPath(), "DataverseMigrationScaffolder", "template-" + Guid.NewGuid().ToString("N"));
+            var assembly = typeof(HarnessGenerator).Assembly;
+            try
+            {
+                foreach (var resource in assembly.GetManifestResourceNames().Where(r => r.StartsWith(BuiltInResources, StringComparison.Ordinal)))
+                {
+                    var path = Path.Combine(root, resource.Substring(BuiltInResources.Length).Replace('/', Path.DirectorySeparatorChar).Replace('\\', Path.DirectorySeparatorChar));
+                    Directory.CreateDirectory(Path.GetDirectoryName(path));
+                    using (var source = assembly.GetManifestResourceStream(resource))
+                    using (var target = File.Create(path))
+                        source.CopyTo(target);
+                }
+                var project = Path.Combine(root, BuiltInProjectFile.Replace('/', Path.DirectorySeparatorChar));
+                var folder = Path.GetDirectoryName(project);
+                if (!File.Exists(project)) throw new InvalidOperationException("The built-in template is missing from this build of the plugin.");
+
+                var stagingConnection = Xml(SqlConnection(server, stagingDatabase));
+                var legacyConnection = Xml(SqlConnection(server, legacyDatabase));
+                Rewrite(Path.Combine(folder, "Staging.conmgr"), t => Replace(t, "Data Source=localhost;Initial Catalog=Staging", stagingConnection));
+                Rewrite(Path.Combine(folder, "Legacy.conmgr"), t => Replace(t, "Data Source=localhost;Initial Catalog=Legacy", legacyConnection));
+                Rewrite(Path.Combine(folder, "Dynamics CRM Connection Manager.conmgr"),
+                        t => Replace(t, ";ServerUrl=" + PlaceholderDataverseUrl + ";", ";ServerUrl=" + Xml(dataverseUrl) + ";"));
+                Rewrite(project, t =>
+                {
+                    // The project file's copies of the connection settings (used when deploying).
+                    t = Replace(t, "Data Source=localhost;Initial Catalog=Staging", stagingConnection);
+                    t = Replace(t, "Data Source=localhost;Initial Catalog=Legacy", legacyConnection);
+                    t = Replace(t, ";ServerUrl=" + PlaceholderDataverseUrl + ";", ";ServerUrl=" + Xml(dataverseUrl) + ";");
+                    t = ParameterValue(t, "CM.Staging.ServerName", Xml(server));
+                    t = ParameterValue(t, "CM.Staging.InitialCatalog", Xml(stagingDatabase));
+                    t = ParameterValue(t, "CM.Legacy.ServerName", Xml(server));
+                    t = ParameterValue(t, "CM.Legacy.InitialCatalog", Xml(legacyDatabase));
+                    return ParameterValue(t, "CM.Dynamics CRM Connection Manager.ServerUrl", Xml(dataverseUrl));
+                });
+                // The staging SQL reads the legacy tables by three-part name.
+                foreach (var sql in Directory.GetFiles(Path.Combine(root, "Queries"), "*.sql"))
+                    Rewrite(sql, t => Replace(t, "[Legacy].[dbo].", "[" + legacyDatabase.Replace("]", "]]") + "].[dbo]."));
+                return new HarnessTemplate(project, BuiltInPackage, root);
+            }
+            catch
+            {
+                TryDelete(root);
+                throw;
+            }
+        }
+
+        private static string SqlConnection(string server, string database)
+        {
+            return "Data Source=" + server + ";Initial Catalog=" + database;
+        }
+
+        private static string Xml(string value)
+        {
+            return System.Security.SecurityElement.Escape(value);
+        }
+
+        /// <summary>Replace every occurrence; the template must contain the text.</summary>
+        private static string Replace(string text, string old, string value)
+        {
+            if (!text.Contains(old)) throw new InvalidOperationException("The built-in template does not contain " + old + ".");
+            return text.Replace(old, value);
+        }
+
+        /// <summary>Set the Value of a connection manager parameter (CM.&lt;manager&gt;.&lt;property&gt;) in a .dtproj.</summary>
+        private static string ParameterValue(string text, string parameter, string value)
+        {
+            var pattern = "(<SSIS:Parameter\\s+SSIS:Name=\"" + Regex.Escape(parameter) + "\">(?:(?!</SSIS:Parameter>).)*?"
+                          + "<SSIS:Property SSIS:Name=\"Value\">)[^<]*";
+            var regex = new Regex(pattern, RegexOptions.Singleline);
+            if (!regex.IsMatch(text)) throw new InvalidOperationException("The built-in template has no " + parameter + " parameter.");
+            return regex.Replace(text, m => m.Groups[1].Value + value);
+        }
+
+        private static void Rewrite(string path, Func<string, string> change)
+        {
+            var bytes = File.ReadAllBytes(path);
+            var bom = bytes.Length >= 3 && bytes[0] == 0xEF && bytes[1] == 0xBB && bytes[2] == 0xBF;
+            var text = new System.Text.UTF8Encoding(false).GetString(bytes, bom ? 3 : 0, bytes.Length - (bom ? 3 : 0));
+            File.WriteAllBytes(path, (bom ? new byte[] { 0xEF, 0xBB, 0xBF } : new byte[0]).Concat(new System.Text.UTF8Encoding(false).GetBytes(change(text))).ToArray());
+        }
+
+        internal static void TryDelete(string folder)
+        {
+            try { if (folder != null && Directory.Exists(folder)) Directory.Delete(folder, true); }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
         }
 
         /// <summary>Subfolder of each generated SSIS project holding the scaffolder run it was built from.</summary>
@@ -139,6 +274,28 @@ namespace DataverseMigrationScaffolder.Core
             var seed = list.FirstOrDefault(f => f.FileName == "meta_seed.sql");
             options.MetaSeedText = seed != null ? seed.Content : null;
             return Run(options);
+        }
+    }
+
+    /// <summary>A reference project to generate from. The built-in template lives in a temporary
+    /// folder that Dispose removes; a user's own reference project is never touched.</summary>
+    public sealed class HarnessTemplate : IDisposable
+    {
+        private readonly string temporaryRoot;
+
+        public string ProjectFile { get; private set; }
+        public string Package { get; private set; }
+
+        internal HarnessTemplate(string projectFile, string package, string temporaryRoot)
+        {
+            ProjectFile = projectFile;
+            Package = package;
+            this.temporaryRoot = temporaryRoot;
+        }
+
+        public void Dispose()
+        {
+            HarnessGenerator.TryDelete(temporaryRoot);
         }
     }
 }

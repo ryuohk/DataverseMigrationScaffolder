@@ -332,15 +332,17 @@ namespace DataverseMigrationScaffolder
                 + "It retrieves the latest metadata for each checked table, orders the tables by dependency, and writes a new "
                 + "SSIS-<date-time> folder in the output folder. That folder holds the project, its SQL query files, and a Scaffolder "
                 + "subfolder with the scripts, manifest and metadata seed it was built from.\n"
-                + "The first time, SSIS Settings opens so you can choose the reference project to copy from.",
+                + "The first time, SSIS Settings opens so you can choose the built-in template (and enter your SQL Server and "
+                + "database names) or your own reference project.",
                 lblStep4, _btnGenerate);
             Tips.Set(_tip, "Saves files for the checked tables to the output folder without building an SSIS project:\n"
                 + "- SQL scripts: CREATE TABLE scripts for the staging and GUID tables\n"
                 + "- Data dictionary: an Excel workbook describing every table and column\n"
                 + "- Scaffolder run: scripts, manifest and metadata seed, to build a project later without connecting",
                 btnExport);
-            Tips.Set(_tip, "Choose the reference SSIS project or solution to copy from, the template package with the sample data flow, "
-                + "and the new project's name. These are remembered for Generate SSIS Project.\n"
+            Tips.Set(_tip, "Choose the template the project is built from: the built-in one (enter your SQL Server, staging and legacy "
+                + "database names; the Dataverse URL comes from the connected environment) or your own reference SSIS project and "
+                + "its template package. Also the new project's name. These are remembered for Generate SSIS Project.\n"
                 + "You can also build a project from a previous scaffolder run here, without connecting to Dataverse.",
                 btnSsisSettings);
 
@@ -502,8 +504,9 @@ namespace DataverseMigrationScaffolder
                 "     schema, tables per file and the legacy match key.",
                 "",
                 "  STEP 4  Generate SSIS Project builds the migration harness straight from",
-                "          the checked tables and your reference SSIS project (chosen once",
-                "          under SSIS Settings...), in a new SSIS-<date> folder.",
+                "          the checked tables, in a new SSIS-<date> folder. It uses the",
+                "          built-in template or your own reference SSIS project (chosen",
+                "          once under SSIS Settings...).",
                 "          Export saves SQL scripts, a data dictionary or a scaffolder",
                 "          run (to rebuild a project later without connecting).",
                 "",
@@ -1029,7 +1032,7 @@ namespace DataverseMigrationScaffolder
             }
             else
             {
-                using (var dialog = new HarnessDialog(_settings, true))
+                using (var dialog = new HarnessDialog(_settings, true, ConnectedUrl()))
                 {
                     var answer = dialog.ShowDialog(this);
                     SaveSettings();
@@ -1046,12 +1049,20 @@ namespace DataverseMigrationScaffolder
             CaptureSettingsFromUi();
             ExitEditMode();
             var picks = Service != null ? CheckedPicks() : new List<string>();
-            using (var dialog = new HarnessDialog(_settings, picks.Count > 0))
+            using (var dialog = new HarnessDialog(_settings, picks.Count > 0, ConnectedUrl()))
             {
                 var answer = dialog.ShowDialog(this);
                 SaveSettings();
                 if (answer == DialogResult.OK) ExecuteMethod(() => RunGeneration(picks, _settings.ForHarness(), dialog.OutputFolder));
             }
+        }
+
+        /// <summary>The connected environment's URL, for the built-in template's Dataverse connection.</summary>
+        private string ConnectedUrl()
+        {
+            if (ConnectionDetail == null) return null;
+            var url = !string.IsNullOrWhiteSpace(ConnectionDetail.WebApplicationUrl) ? ConnectionDetail.WebApplicationUrl : ConnectionDetail.OriginalUrl;
+            return string.IsNullOrWhiteSpace(url) ? null : url.Trim().TrimEnd('/');
         }
 
         private sealed class RunOutcome
@@ -1068,6 +1079,7 @@ namespace DataverseMigrationScaffolder
         {
             var cache = _metadataCache;
             var solutionFilter = _solutionFilter;
+            var connectedUrl = ConnectedUrl();
 
             WorkAsync(new WorkAsyncInfo
             {
@@ -1113,8 +1125,9 @@ namespace DataverseMigrationScaffolder
                         worker.ReportProgress(100, "Generating the SSIS project...");
                         try
                         {
-                            outcome.SsisSummary = HarnessGenerator.GenerateFromRun(outcome.Scripts.Files, settings.HarnessProjectFile,
-                                settings.HarnessPackage, ssisOutput, settings.HarnessProjectName, settings.HarnessDontSaveSensitive);
+                            using (var template = HarnessGenerator.ResolveTemplate(settings, connectedUrl))
+                                outcome.SsisSummary = HarnessGenerator.GenerateFromRun(outcome.Scripts.Files, template.ProjectFile,
+                                    template.Package, ssisOutput, settings.HarnessProjectName, settings.HarnessDontSaveSensitive);
                             WriteFiles(Path.Combine(ssisOutput, HarnessGenerator.RunFolder), outcome.Scripts.Files);
                         }
                         catch (Exception ex) when (ex is InvalidOperationException || ex is ArgumentException

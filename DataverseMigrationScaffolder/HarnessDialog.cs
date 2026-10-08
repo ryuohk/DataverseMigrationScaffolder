@@ -8,8 +8,9 @@ using DataverseMigrationScaffolder.Core;
 namespace DataverseMigrationScaffolder
 {
     /// <summary>
-    /// SSIS project settings: the reference project, template package and project name (remembered
-    /// in ToolSettings), and where the scaffolder outputs come from. "Tables checked in this
+    /// SSIS project settings: the template (the built-in one with its connections, or the user's own
+    /// reference project and template package) and project name (remembered in ToolSettings), and
+    /// where the scaffolder outputs come from. "Tables checked in this
     /// session" closes the dialog with OK and the main control generates in memory; "A previous
     /// scaffolder run" generates here from a manifest.json and the scripts next to it.
     /// </summary>
@@ -19,6 +20,12 @@ namespace DataverseMigrationScaffolder
         private readonly RadioButton fromManifest = new RadioButton { Text = "A previous scaffolder run (manifest.json)", AutoSize = true };
         private readonly TextBox manifest = new TextBox();
         private readonly Button manifestBrowse = new Button { Text = "Browse...", Dock = DockStyle.Fill };
+        private readonly RadioButton builtIn = new RadioButton { Text = "Built-in template (nothing to provide)", AutoSize = true };
+        private readonly RadioButton ownTemplate = new RadioButton { Text = "My own reference project", AutoSize = true };
+        private readonly TextBox sqlServer = new TextBox();
+        private readonly TextBox stagingDatabase = new TextBox();
+        private readonly TextBox legacyDatabase = new TextBox();
+        private readonly TextBox dataverseUrl = new TextBox();
         private readonly TextBox reference = new TextBox();
         private readonly ComboBox projects = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
         private readonly ComboBox packages = new ComboBox { DropDownStyle = ComboBoxStyle.DropDownList };
@@ -30,15 +37,18 @@ namespace DataverseMigrationScaffolder
         private readonly Button generate = new Button { AutoSize = true };
         private readonly TableLayoutPanel fields = new TableLayoutPanel { Dock = DockStyle.Top, AutoSize = true, ColumnCount = 3, Padding = new Padding(10) };
         private readonly ToolSettings settings;
+        private readonly string connectedUrl;
+        private Button referenceBrowse;
         private bool busy;
         private ToolTip tip;
 
         /// <summary>The output folder chosen for a generation from this session.</summary>
         public string OutputFolder { get { return output.Text.Trim(); } }
 
-        public HarnessDialog(ToolSettings settings, bool sessionAvailable)
+        public HarnessDialog(ToolSettings settings, bool sessionAvailable, string connectedUrl = null)
         {
             this.settings = settings;
+            this.connectedUrl = connectedUrl;
             Text = "Generate SSIS Migration Harness";
             Size = new Size(940, 660);
             MinimumSize = new Size(760, 600);
@@ -54,7 +64,15 @@ namespace DataverseMigrationScaffolder
             AddRow("Scaffolder manifest", manifest, manifestBrowse);
             manifestBrowse.Click += (s, e) => PickFile(manifest, "Scaffolder manifest|manifest.json|JSON files|*.json",
                 ManifestBrowseFolder(manifest.Text, settings.OutputFolder), "manifest.json");
-            var referenceBrowse = new Button { Text = "Browse...", Dock = DockStyle.Fill };
+            var templates = new FlowLayoutPanel { AutoSize = true, Dock = DockStyle.Fill, Margin = new Padding(4, 3, 4, 3) };
+            templates.Controls.Add(builtIn);
+            templates.Controls.Add(ownTemplate);
+            AddRow("Template", templates);
+            AddRow("SQL Server", sqlServer);
+            AddRow("Staging database", stagingDatabase);
+            AddRow("Legacy database", legacyDatabase);
+            AddRow("Dataverse URL", dataverseUrl);
+            referenceBrowse = new Button { Text = "Browse...", Dock = DockStyle.Fill };
             referenceBrowse.Click += (s, e) => { if (PickFile(reference, "SSIS project or solution|*.dtproj;*.sln")) LoadProjects(); };
             AddRow("Reference project/solution", reference, referenceBrowse);
             AddRow("SSIS project", projects);
@@ -78,6 +96,13 @@ namespace DataverseMigrationScaffolder
             Controls.Add(fields);
 
             // Remembered settings.
+            sqlServer.Text = settings.HarnessSqlServer ?? "";
+            stagingDatabase.Text = settings.HarnessStagingDatabase ?? "";
+            legacyDatabase.Text = settings.HarnessLegacyDatabase ?? "";
+            dataverseUrl.Text = !string.IsNullOrWhiteSpace(settings.HarnessDataverseUrl) ? settings.HarnessDataverseUrl : connectedUrl ?? "";
+            (settings.UsesBuiltInTemplate ? builtIn : ownTemplate).Checked = true;
+            builtIn.CheckedChanged += (s, e) => UpdateTemplate();
+            UpdateTemplate();
             reference.Text = settings.HarnessReference ?? "";
             projectName.Text = string.IsNullOrWhiteSpace(settings.HarnessProjectName) ? "MigrationHarness_Generated" : settings.HarnessProjectName;
             dontSaveSensitive.Checked = settings.HarnessDontSaveSensitive;
@@ -99,7 +124,9 @@ namespace DataverseMigrationScaffolder
                 Remember();
                 if (fromSession.Checked)
                 {
-                    var problem = HarnessGenerator.Problem((string)projects.SelectedItem, (string)packages.SelectedItem, OutputFolder, projectName.Text.Trim());
+                    var problem = builtIn.Checked
+                        ? HarnessGenerator.BuiltInProblem(sqlServer.Text, stagingDatabase.Text, legacyDatabase.Text, OutputFolder, projectName.Text.Trim())
+                        : HarnessGenerator.Problem((string)projects.SelectedItem, (string)packages.SelectedItem, OutputFolder, projectName.Text.Trim());
                     if (problem != null) { log.Text = problem; return; }
                     DialogResult = DialogResult.OK;   // the main control generates from the session's tables
                     Close();
@@ -110,13 +137,34 @@ namespace DataverseMigrationScaffolder
                 log.Text = "Generating the project...";
                 try
                 {
-                    log.Text = await HarnessGenerator.Generate(manifest.Text.Trim(), (string)projects.SelectedItem,
-                        (string)packages.SelectedItem, OutputFolder, projectName.Text.Trim(), dontSaveSensitive.Checked);
+                    using (var template = HarnessGenerator.ResolveTemplate(settings, connectedUrl))
+                        log.Text = await HarnessGenerator.Generate(manifest.Text.Trim(), template.ProjectFile, template.Package,
+                                                                   OutputFolder, projectName.Text.Trim(), dontSaveSensitive.Checked);
                 }
                 catch (Exception ex) { log.Text = "Generation failed: " + ex.Message; }
                 finally { busy = false; fields.Enabled = true; }
             };
             FormClosing += (s, e) => { if (busy) e.Cancel = true; };
+        }
+
+        /// <summary>Show the built-in template's connection fields or the reference project fields.</summary>
+        private void UpdateTemplate()
+        {
+            var own = !builtIn.Checked;
+            foreach (var field in new Control[] { sqlServer, stagingDatabase, legacyDatabase, dataverseUrl })
+                SetRowVisible(field, !own);
+            foreach (var field in new Control[] { reference, projects, packages })
+                SetRowVisible(field, own);
+            if (referenceBrowse != null) referenceBrowse.Visible = own;
+            if (own && projects.Items.Count == 0) LoadProjects();   // shows a broken reference path now
+            else if (!own) log.Text = "";
+        }
+
+        private void SetRowVisible(Control field, bool visible)
+        {
+            field.Visible = visible;
+            var label = Label(field);
+            if (label != field) label.Visible = visible;
         }
 
         private void UpdateMode()
@@ -129,8 +177,9 @@ namespace DataverseMigrationScaffolder
                   + "files are needed. These settings are remembered, so Generate SSIS Project runs in one click next time."
                 : "Generate from an earlier scaffolder run: the Scaffolder folder inside an earlier SSIS project, or files saved with "
                   + "Export > Scaffolder run. No Dataverse connection is needed.";
-            hint.Text += "\nSelect a package containing one supported Migrate data flow. Connections are retained. Generation does not "
-                         + "execute SQL or migrate data. See the results for skipped tables.";
+            hint.Text += "\nThe built-in template needs nothing but your connections; your own reference project must contain one supported "
+                         + "Migrate data flow, and its connections are kept. Generation does not execute SQL or migrate data. See the results "
+                         + "for skipped tables.";
         }
 
         private void AddTips(Button referenceBrowse, Button outputBrowse)
@@ -145,6 +194,19 @@ namespace DataverseMigrationScaffolder
                 + "earlier run.", Label(fromSession.Parent));
             Tips.Set(tip, "The manifest.json of the earlier run. Its staging and GUID scripts and meta_seed.sql must be in the same folder.\n"
                 + "Defaults to the newest SSIS-*\\Scaffolder\\manifest.json in the output folder.", Label(manifest), manifest, manifestBrowse);
+            Tips.Set(tip, "Built-in template: the plugin's own reference project, a migration flow for one sample table with the "
+                + "recommended KingswaySoft settings, staging SQL and error logging. Nothing to provide except the connections below; "
+                + "every table and column in the generated project comes from your Dataverse environment.\n"
+                + "My own reference project: copy a hand-built SSIS project of yours instead, with its connections and settings.",
+                Label(builtIn.Parent), builtIn, ownTemplate);
+            Tips.Set(tip, "The SQL Server instance that holds the staging and legacy databases, e.g. localhost or MYSERVER\\SQLEXPRESS. "
+                + "Written into the generated project's Staging and Legacy connections (Windows authentication).", Label(sqlServer), sqlServer);
+            Tips.Set(tip, "The database the staging and GUID tables are created in.", Label(stagingDatabase), stagingDatabase);
+            Tips.Set(tip, "The database holding the legacy data. The generated Stage SQL reads it by name ([<database>].[dbo].[<table>]), "
+                + "so it must be on the same SQL Server as the staging database.", Label(legacyDatabase), legacyDatabase);
+            Tips.Set(tip, "The Dataverse environment the generated project loads into. Defaults to the environment XrmToolBox is connected "
+                + "to. Enter the client id and secret in Visual Studio after opening the project; they are never stored by the plugin.",
+                Label(dataverseUrl), dataverseUrl);
             Tips.Set(tip, "Your hand-built SSIS solution (.sln) or project (.dtproj) to copy from. Its connection managers, project "
                 + "parameters and package settings are reused. It is only read, never changed.", Label(reference), reference, referenceBrowse);
             Tips.Set(tip, "The SSIS project inside that solution. For a .dtproj reference this is the project itself.", Label(projects), projects);
@@ -174,9 +236,20 @@ namespace DataverseMigrationScaffolder
 
         private void Remember()
         {
-            settings.HarnessReference = reference.Text.Trim();
-            settings.HarnessProjectFile = projects.SelectedItem as string ?? "";
-            settings.HarnessPackage = packages.SelectedItem as string ?? "";
+            settings.HarnessTemplate = builtIn.Checked ? ToolSettings.BuiltInTemplate : ToolSettings.OwnTemplate;
+            settings.HarnessSqlServer = sqlServer.Text.Trim();
+            settings.HarnessStagingDatabase = stagingDatabase.Text.Trim();
+            settings.HarnessLegacyDatabase = legacyDatabase.Text.Trim();
+            // The connected environment's URL is not remembered, so the next connection's is used.
+            var url = dataverseUrl.Text.Trim().TrimEnd('/');
+            settings.HarnessDataverseUrl = string.Equals(url, connectedUrl ?? "", StringComparison.OrdinalIgnoreCase) ? "" : url;
+            // The reference project is kept while the built-in template is in use, for switching back.
+            if (ownTemplate.Checked)
+            {
+                settings.HarnessReference = reference.Text.Trim();
+                settings.HarnessProjectFile = projects.SelectedItem as string ?? "";
+                settings.HarnessPackage = packages.SelectedItem as string ?? "";
+            }
             settings.HarnessProjectName = projectName.Text.Trim();
             settings.HarnessDontSaveSensitive = dontSaveSensitive.Checked;
         }
@@ -240,7 +313,7 @@ namespace DataverseMigrationScaffolder
                 var match = projects.Items.Cast<string>().FirstOrDefault(p => string.Equals(p, selected, StringComparison.OrdinalIgnoreCase));
                 projects.SelectedIndex = match != null ? projects.Items.IndexOf(match) : 0;
             }
-            catch (Exception ex) { log.Text = ex.Message; }
+            catch (Exception ex) { if (ownTemplate.Checked) log.Text = ex.Message; }
         }
 
         private void LoadPackages()
@@ -255,7 +328,7 @@ namespace DataverseMigrationScaffolder
                 if (remembered != null) packages.SelectedItem = remembered;
                 else if (packages.Items.Count == 1) packages.SelectedIndex = 0;
             }
-            catch (Exception ex) { log.Text = ex.Message; }
+            catch (Exception ex) { if (ownTemplate.Checked) log.Text = ex.Message; }
         }
     }
 }

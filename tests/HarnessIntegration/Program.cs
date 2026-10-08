@@ -1,6 +1,7 @@
 using System;
 using System.IO;
 using System.Linq;
+using System.Text.RegularExpressions;
 using DataverseMigrationScaffolder.Core;
 
 class Program
@@ -66,8 +67,36 @@ class Program
             Assert(Directory.GetFiles(clearedOut, "*.dtsx").All(f => File.ReadAllText(f).Contains("DTS:ProtectionLevel=\"0\"")),
                    "DontSaveSensitive not applied to every package");
             Assert(summary.Contains("protection: DontSaveSensitive"), "Summary does not mention the protection level");
+            // The built-in template (scaffolder 1.2026.10.8+ staging scripts carry tablename, which it logs).
+            var staging = new Regex(@"(CREATE TABLE \[\w+\]\.\[(stage_\w+)\]\((?:(?!\n\s*\);).)*?\[statecode\] INT)(,?)", RegexOptions.Singleline);
+            var named = files.Select(f => new GeneratedFile { FileName = f.FileName, Content = f.FileName.EndsWith("_create_staging.sql")
+                ? staging.Replace(f.Content, m => m.Groups[1].Value + ",\n    [tablename] NVARCHAR(100) DEFAULT '" + m.Groups[2].Value + "'" + m.Groups[3].Value)
+                : f.Content }).ToList();
+            var builtInOut = args[3] + "-builtin";
+            var settings = new ToolSettings { HarnessTemplate = ToolSettings.BuiltInTemplate, HarnessSqlServer = @"SQL01\INST",
+                                              HarnessStagingDatabase = "Stage_DB", HarnessLegacyDatabase = "Old_DB" };
+            Assert(settings.UsesBuiltInTemplate && HarnessGenerator.SettingsComplete(settings), "Built-in settings complete");
+            string unpacked;
+            using (var template = HarnessGenerator.ResolveTemplate(settings, "https://contoso.crm.dynamics.com/"))
+            {
+                unpacked = Path.GetDirectoryName(Path.GetDirectoryName(template.ProjectFile));
+                Assert(File.Exists(template.ProjectFile) && template.Package == "01b - Harness.dtsx", "Built-in template unpacked");
+                HarnessGenerator.GenerateFromRun(named, template.ProjectFile, template.Package, builtInOut, "BuiltInHarness");
+            }
+            Assert(!Directory.Exists(unpacked), "Built-in template's temporary copy removed");
+            Func<string, string> read = name => File.ReadAllText(Path.Combine(builtInOut, name));
+            Assert(read("Staging.conmgr").Contains(@"Data Source=SQL01\INST;Initial Catalog=Stage_DB;"), "Built-in staging connection");
+            Assert(read("Legacy.conmgr").Contains(@"Data Source=SQL01\INST;Initial Catalog=Old_DB;"), "Built-in legacy connection");
+            Assert(read("Dynamics CRM Connection Manager.conmgr").Contains(";ServerUrl=https://contoso.crm.dynamics.com;"), "Built-in Dataverse URL");
+            Assert(Regex.IsMatch(read("BuiltInHarness.dtproj"), @"CM\.Staging\.ServerName"">(?:(?!</SSIS:Parameter>).)*?Name=""Value"">SQL01\\INST<", RegexOptions.Singleline),
+                   "Built-in project parameters");
+            var stageSql = Directory.GetFiles(Path.Combine(builtInOut, "Queries"), "*.sql").Select(File.ReadAllText).ToList();
+            Assert(stageSql.Count > 0 && stageSql.All(t => t.Contains("FROM [Old_DB].[dbo].")), "Built-in stage SQL reads the legacy database");
+            // Only the report names the template's sample table (as the reference it was built from).
+            Assert(!Directory.EnumerateFiles(builtInOut, "*", SearchOption.AllDirectories).Where(f => !f.EndsWith("harnessgen-report.json"))
+                             .Any(f => Regex.IsMatch(File.ReadAllText(f), "new_category", RegexOptions.IgnoreCase)), "No sample table names left");
             Console.WriteLine(result);
-            Console.WriteLine("PASS: in-process generation, solution/project discovery, reference preservation, connection preservation, output safety, invalid package rejection, error reporting and DontSaveSensitive.");
+            Console.WriteLine("PASS: in-process generation, solution/project discovery, reference preservation, connection preservation, output safety, invalid package rejection, error reporting, DontSaveSensitive and the built-in template.");
             return 0;
         }
         catch (Exception ex) { Console.Error.WriteLine(ex); return 1; }
