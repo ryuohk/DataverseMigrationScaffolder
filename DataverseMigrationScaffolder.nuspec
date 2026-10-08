@@ -14,7 +14,7 @@
     <summary>Scaffold SQL staging and GUID mapping tables from Dataverse metadata, batched by dependency tier - plus data dictionary, JSON run manifest, harness metadata seed, and SSIS migration harness generation.</summary>
     <releaseNotes>
 1.2026.10.8: Unique GUID legacy ids and staging table names.
-- GUID tables make their legacy match key UNIQUE (constraint UQ_<GUID table>_<column>), so each legacy record maps to one Dataverse record. The "Index match keys" option is removed: the constraint already indexes the column.
+- GUID tables make their legacy match key UNIQUE (constraint UQ_&lt;GUID table&gt;_&lt;column&gt;), so each legacy record maps to one Dataverse record. The "Index match keys" option is removed: the constraint already indexes the column.
 - Staging tables get a tablename column that defaults to the staging table's name, so a migration's error rows can record which table they came from.
 - Generated SSIS projects: deferred lookup updates also write the columns the reference project's error destinations log (such as tablename).
 
