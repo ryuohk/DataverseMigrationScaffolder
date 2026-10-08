@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
     <id>DataverseMigrationScaffolder</id>
-    <version>1.2026.10.8</version>
+    <version>1.2026.10.9</version>
     <title>Dataverse Migration Scaffolder</title>
     <authors>Ryu Ohkawa</authors>
     <owners>Ryu Ohkawa</owners>
@@ -13,6 +13,11 @@
     <description>XrmToolBox tool that scaffolds a SQL data-migration harness from Dataverse metadata: staging table and GUID mapping table DDL scripts batched strictly by dependency tier with UNIQUE legacy match keys, a styled Excel data dictionary, a machine-readable manifest.json, and a harness metadata seed (meta.Entity / meta.ColumnMap), and generates a tailored SSIS migration harness project from them - including a deferred second pass for every dependency cycle it breaks. Filters tables and columns by solution, remembers selections per environment, and is fully configurable (prefixes, match-key suffixes, dependency-ranking exclusions).</description>
     <summary>Scaffold SQL staging and GUID mapping tables from Dataverse metadata, batched by dependency tier - plus data dictionary, JSON run manifest, harness metadata seed, and SSIS migration harness generation.</summary>
     <releaseNotes>
+1.2026.10.9: Built-in SSIS template.
+- Generate SSIS Project no longer needs a reference project: choose the built-in template in SSIS Settings and enter your SQL Server and the staging and legacy database names (the Dataverse URL defaults to the connected environment). It has the recommended KingswaySoft settings, owner, state and audit mappings, staging SQL and error logging; every table and column in the result comes from your environment. The client id and secret are entered in Visual Studio and never stored.
+- Your own reference project can still be used, as before.
+- A reference that leaves its primary name out of the Dataverse destinations now leaves out every table's primary name.
+
 1.2026.10.8: Unique GUID legacy ids and staging table names.
 - GUID tables make their legacy match key UNIQUE (constraint UQ_&lt;GUID table&gt;_&lt;column&gt;), so each legacy record maps to one Dataverse record. The "Index match keys" option is removed: the constraint already indexes the column.
 - Staging tables get a tablename column that defaults to the staging table's name, so a migration's error rows can record which table they came from.
