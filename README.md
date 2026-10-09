@@ -381,6 +381,24 @@ tools/MakeBuiltInTemplate/bin/Release/net48/MakeBuiltInTemplate.exe <reference r
 `rules.json` is `{"renames": [["old", "new"], ...], "forbidden": ["regex", ...]}`; the manifest must
 contain the reference project's table, for its primary name and match key.
 
+### Release
+
+`tools/release.ps1` prepares a release from a clean `main`: it writes the version to the csproj and
+the nuspec, adds the release notes (plain text; `<`, `>` and `&` are escaped for you), builds, runs
+both tests, packs `artifacts/DataverseMigrationScaffolder.<version>.nupkg`, checks the package for
+your user name, machine name, profile path and OneDrive, and commits the bump on a new branch
+`release-<version>`. If anything fails, the version files are put back. It never pushes.
+
+```powershell
+tools/release.ps1 -Notes "Summary line.`n- First change.`n- Second change." [-Version 1.2026.10.10] [-Install]
+```
+
+The version defaults to today's date (`1.YYYY.M.D`) and must be higher than the current one.
+`-NotesFile notes.txt` reads the notes from a file; `-Install` copies the DLL into XrmToolBox's
+Plugins folder when XrmToolBox is closed. Names that must never be published (your
+organization's, for example) go in `tools/release-check.local.txt`, one regular expression per
+line; Git ignores that file. The script prints the push and `nuget push` commands to finish.
+
 ## License
 
 MIT. See [LICENSE](LICENSE).
