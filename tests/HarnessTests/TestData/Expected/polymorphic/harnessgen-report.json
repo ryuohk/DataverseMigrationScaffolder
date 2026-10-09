@@ -1,0 +1,455 @@
+{
+  "generator": "harnessgen 0.1.0",
+  "manifest": "manifest.json",
+  "referenceProject": "ReferenceHarness.dtproj",
+  "referencePackage": "01b - Harness.dtsx",
+  "reference": {
+    "table": "contoso_category",
+    "task": "Migrate Category",
+    "stagingTable": "[dbo].[stage_contoso_Category]",
+    "guidTable": "[dbo].[guid_contoso_Category]",
+    "recordId": "contoso_categoryid",
+    "matchKey": "contoso_legacyid",
+    "columns": [
+      "contoso_activedate",
+      "contoso_category",
+      "contoso_categorycode",
+      "contoso_categoryid",
+      "contoso_expirationdate",
+      "contoso_formid",
+      "contoso_legacyid",
+      "overriddencreatedon",
+      "fabrikam_legacycreatedby",
+      "fabrikam_legacymodifiedon",
+      "fabrikam_legacymodifiedby",
+      "ownerid",
+      "owneridtype",
+      "statecode"
+    ]
+  },
+  "summary": {
+    "harnessPackages": 3,
+    "stagingPackages": 3,
+    "tables": 4,
+    "migratedTables": 3,
+    "skippedTables": 1,
+    "deferredPasses": 1,
+    "entryPoint": "Run_Migration.dtsx",
+    "projectPackages": [
+      "00 - Error and UpdateTime Tables.dtsx",
+      "01a - Staging.dtsx",
+      "01b - Harness.dtsx",
+      "02a - Staging.dtsx",
+      "02b - Harness.dtsx",
+      "03a - Staging.dtsx",
+      "03b - Harness.dtsx",
+      "04 - Deferred Updates.dtsx",
+      "Run_Migration.dtsx"
+    ],
+    "projectConnectionManagers": [
+      "Dynamics CRM Connection Manager.conmgr",
+      "Legacy.conmgr",
+      "Staging.conmgr"
+    ]
+  },
+  "groupMembership": [
+    {
+      "package": "01b - Harness.dtsx",
+      "stagingPackage": "01a - Staging.dtsx",
+      "tier": 0,
+      "tables": [
+        "contoso_category"
+      ]
+    },
+    {
+      "package": "02b - Harness.dtsx",
+      "stagingPackage": "02a - Staging.dtsx",
+      "tier": 1,
+      "tables": [
+        "contoso_case"
+      ]
+    },
+    {
+      "package": "03b - Harness.dtsx",
+      "stagingPackage": "03a - Staging.dtsx",
+      "tier": 2,
+      "tables": [
+        "contoso_incident"
+      ]
+    }
+  ],
+  "unresolvedIssues": [
+    "contoso_court skipped: no legacy match key (legacyid), so created records cannot be recorded in the GUID table",
+    "contoso_case depends on skipped contoso_court; its lookups to contoso_court have no migrated records",
+    "02b - Harness.dtsx: contoso_case: KingswaySoft field types inferred for contoso_bailamount; refresh the destination's metadata in Visual Studio if it reports a mismatch",
+    "Queries/stage_contoso_Case.sql: contoso_courtid: target contoso_court has no legacy key, so its GUIDs cannot be looked up; staged as NULL",
+    "Queries/stage_contoso_Case.sql: contoso_incidentid: legacy m.[incidentidtype] must hold the target table's logical name"
+  ],
+  "validation": {
+    "outputChecks": [
+      "project lists exactly the generated packages, with matching package metadata",
+      "project lists exactly the carried project connection managers",
+      "package ids are unique and match the project metadata",
+      "entry point calls exactly the setup, harness and deferred update packages",
+      "no unresolved placeholder SQL or expressions",
+      "each table's data flow reads its own staging table, targets its own entity and syncs its own GUID table",
+      "no reference-table identifiers left in other tables' scopes (lookups excluded)"
+    ],
+    "buildValidated": false,
+    "note": "Checked by reading the generated XML only. The project has not been opened or built in Visual Studio with SSIS Projects and KingswaySoft, and no migration has been run."
+  },
+  "project": {
+    "name": "ReferenceHarness_Generated",
+    "file": "ReferenceHarness_Generated.dtproj",
+    "id": "{46500C9A-77AB-5AB1-97E7-E59A2944FF13}",
+    "keptReferencePackage": false,
+    "omittedReferencePackages": [
+      "01b - Harness.dtsx"
+    ],
+    "carriedFiles": [
+      "Dynamics CRM Connection Manager.conmgr",
+      "Legacy.conmgr",
+      "Project.params",
+      "ReferenceHarness_Generated.database",
+      "Staging.conmgr"
+    ],
+    "omittedReferenceFiles": [
+      "01b - Harness.dtsx"
+    ],
+    "configurationSettings": {
+      "projectLevel": 1,
+      "generatedPackageSettings": 0,
+      "droppedLegacyPackageSettings": 0,
+      "droppedLastDeploymentPath": 0
+    }
+  },
+  "connectionManagers": [
+    {
+      "file": "Dynamics CRM Connection Manager.conmgr",
+      "name": "Dynamics CRM Connection Manager",
+      "dtsid": "{FDE9DA74-21D4-4CF4-B7E9-B279EEB3BA47}",
+      "creationName": "DynamicsCRM",
+      "expressionProperties": [],
+      "encryptedValues": false
+    },
+    {
+      "file": "Staging.conmgr",
+      "name": "Staging",
+      "dtsid": "{B8417766-EC9D-4BA9-B311-D190769147F3}",
+      "creationName": "OLEDB",
+      "expressionProperties": [],
+      "encryptedValues": false
+    },
+    {
+      "file": "Legacy.conmgr",
+      "name": "EXAMPLE-SQL.Legacy",
+      "dtsid": "{94D64185-14BC-4069-A0A8-3283C7675983}",
+      "creationName": "OLEDB",
+      "expressionProperties": [],
+      "encryptedValues": false
+    }
+  ],
+  "protection": {
+    "projectProtectionLevel": "EncryptSensitiveWithUserKey",
+    "packageProtectionLevel": "EncryptSensitiveWithUserKey",
+    "credentialNotes": [
+      "Protection level EncryptSensitiveWithUserKey: encrypted values were copied unchanged and were not decrypted. They are bound to the Windows user and machine that saved the reference, and may not decrypt for anyone else or in the regenerated packages; re-enter credentials or supply them through parameters or SSIS catalog environments if Visual Studio reports decryption failures."
+    ]
+  },
+  "setup": {
+    "package": "00 - Error and UpdateTime Tables",
+    "file": "00 - Error and UpdateTime Tables.dtsx",
+    "dtsid": "{9CD82367-3CF3-5DB6-ACE3-D21325AE8B17}",
+    "tasks": [
+      "Create Error Table",
+      "Create UpdateTime Table",
+      "Create GUID Tables"
+    ],
+    "connections": {
+      "project": [
+        "Staging"
+      ],
+      "package": []
+    }
+  },
+  "groups": [
+    {
+      "fileNumber": 1,
+      "tier": 0,
+      "tierPart": 1,
+      "tierTotalParts": 1,
+      "stagingFile": "01_create_staging.sql",
+      "guidFile": "01_create_guid.sql",
+      "stagingPackage": "01a - Staging.dtsx",
+      "stagingDtsid": "{4D7A0947-4CF2-52BC-893B-EC7C09E10695}",
+      "package": "01b - Harness",
+      "file": "01b - Harness.dtsx",
+      "dtsid": "{703CBC53-3A65-5142-803B-E597BC7E3334}",
+      "warnings": [],
+      "tables": [
+        {
+          "table": "contoso_category",
+          "stagingTable": "[dbo].[stage_contoso_Category]",
+          "guidTable": "[dbo].[guid_contoso_Category]",
+          "task": "Migrate Category",
+          "matchKey": "contoso_legacyid",
+          "columns": [
+            "contoso_activedate",
+            "contoso_category",
+            "contoso_categorycode",
+            "contoso_categoryid",
+            "contoso_expirationdate",
+            "contoso_formid",
+            "contoso_legacyid"
+          ],
+          "skippedColumns": [],
+          "stage": {
+            "task": "Stage Category",
+            "file": "Queries/stage_contoso_Category.sql",
+            "unresolvedLookups": [],
+            "assumptions": []
+          },
+          "skipped": null
+        },
+        {
+          "table": "contoso_court",
+          "stagingTable": "[dbo].[stage_contoso_Court]",
+          "guidTable": "[dbo].[guid_contoso_Court]",
+          "task": null,
+          "matchKey": null,
+          "columns": [
+            "contoso_courtid",
+            "contoso_name"
+          ],
+          "skippedColumns": [],
+          "stage": null,
+          "skipped": "no legacy match key (legacyid), so created records cannot be recorded in the GUID table"
+        }
+      ],
+      "connections": {
+        "project": [
+          "Dynamics CRM Connection Manager",
+          "Staging"
+        ],
+        "package": []
+      }
+    },
+    {
+      "fileNumber": 2,
+      "tier": 1,
+      "tierPart": 1,
+      "tierTotalParts": 1,
+      "stagingFile": "02_create_staging.sql",
+      "guidFile": "02_create_guid.sql",
+      "stagingPackage": "02a - Staging.dtsx",
+      "stagingDtsid": "{77478080-2907-5775-8642-941430AA8D9B}",
+      "package": "02b - Harness",
+      "file": "02b - Harness.dtsx",
+      "dtsid": "{63A38915-7AB9-5822-8CEA-96FE3A44E505}",
+      "warnings": [
+        "contoso_case: KingswaySoft field types inferred for contoso_bailamount; refresh the destination's metadata in Visual Studio if it reports a mismatch"
+      ],
+      "tables": [
+        {
+          "table": "contoso_case",
+          "stagingTable": "[dbo].[stage_contoso_Case]",
+          "guidTable": "[dbo].[guid_contoso_Case]",
+          "task": "Migrate Case",
+          "matchKey": "contoso_legacyid",
+          "columns": [
+            "contoso_bailamount",
+            "contoso_caseid",
+            "contoso_categoryid",
+            "contoso_courtid",
+            "contoso_filedon",
+            "contoso_incidentid",
+            "contoso_incidentidtype",
+            "contoso_legacyid",
+            "contoso_name",
+            "contoso_priority",
+            "contoso_sealed"
+          ],
+          "skippedColumns": [
+            "contoso_bailamount_base"
+          ],
+          "stage": {
+            "task": "Stage Case",
+            "file": "Queries/stage_contoso_Case.sql",
+            "unresolvedLookups": [
+              "contoso_courtid: target contoso_court has no legacy key, so its GUIDs cannot be looked up; staged as NULL"
+            ],
+            "assumptions": [
+              "contoso_incidentid: legacy m.[incidentidtype] must hold the target table's logical name"
+            ]
+          },
+          "skipped": null
+        }
+      ],
+      "connections": {
+        "project": [
+          "Dynamics CRM Connection Manager",
+          "Staging"
+        ],
+        "package": []
+      }
+    },
+    {
+      "fileNumber": 3,
+      "tier": 2,
+      "tierPart": 1,
+      "tierTotalParts": 1,
+      "stagingFile": "03_create_staging.sql",
+      "guidFile": "03_create_guid.sql",
+      "stagingPackage": "03a - Staging.dtsx",
+      "stagingDtsid": "{30C31888-A75D-5382-A615-F43570749517}",
+      "package": "03b - Harness",
+      "file": "03b - Harness.dtsx",
+      "dtsid": "{14437CC2-FAB2-5695-9C57-EA1EDDFBEAD6}",
+      "warnings": [],
+      "tables": [
+        {
+          "table": "contoso_incident",
+          "stagingTable": "[dbo].[stage_contoso_Incident]",
+          "guidTable": "[dbo].[guid_contoso_Incident]",
+          "task": "Migrate Incident",
+          "matchKey": "contoso_legacyid",
+          "columns": [
+            "contoso_caseid",
+            "contoso_incidentid",
+            "contoso_legacyid",
+            "contoso_name",
+            "contoso_narrative"
+          ],
+          "skippedColumns": [],
+          "stage": {
+            "task": "Stage Incident",
+            "file": "Queries/stage_contoso_Incident.sql",
+            "unresolvedLookups": [],
+            "assumptions": []
+          },
+          "skipped": null
+        }
+      ],
+      "connections": {
+        "project": [
+          "Dynamics CRM Connection Manager",
+          "Staging"
+        ],
+        "package": []
+      }
+    }
+  ],
+  "orchestration": {
+    "package": "Run_Migration",
+    "file": "Run_Migration.dtsx",
+    "dtsid": "{41E05EDA-6957-52EE-AD6E-93A1B7F91057}",
+    "stages": [
+      {
+        "name": "Setup",
+        "packages": [
+          "00 - Error and UpdateTime Tables.dtsx"
+        ],
+        "chains": [
+          [
+            "00 - Error and UpdateTime Tables.dtsx"
+          ]
+        ],
+        "runsAfter": null
+      },
+      {
+        "name": "Tier_00",
+        "packages": [
+          "01a - Staging.dtsx",
+          "01b - Harness.dtsx"
+        ],
+        "chains": [
+          [
+            "01a - Staging.dtsx",
+            "01b - Harness.dtsx"
+          ]
+        ],
+        "runsAfter": "Setup"
+      },
+      {
+        "name": "Tier_01",
+        "packages": [
+          "02a - Staging.dtsx",
+          "02b - Harness.dtsx"
+        ],
+        "chains": [
+          [
+            "02a - Staging.dtsx",
+            "02b - Harness.dtsx"
+          ]
+        ],
+        "runsAfter": "Tier_00"
+      },
+      {
+        "name": "Tier_02",
+        "packages": [
+          "03a - Staging.dtsx",
+          "03b - Harness.dtsx"
+        ],
+        "chains": [
+          [
+            "03a - Staging.dtsx",
+            "03b - Harness.dtsx"
+          ]
+        ],
+        "runsAfter": "Tier_01"
+      },
+      {
+        "name": "Deferred_Updates",
+        "packages": [
+          "04 - Deferred Updates.dtsx"
+        ],
+        "chains": [
+          [
+            "04 - Deferred Updates.dtsx"
+          ]
+        ],
+        "runsAfter": "Tier_02"
+      }
+    ],
+    "assumedLoaded": [],
+    "metaSeed": null,
+    "connections": {
+      "project": [],
+      "package": []
+    },
+    "note": "Each group runs its staging package (recreate and load staging from the legacy database) and then its harness package."
+  },
+  "deferredUpdates": [
+    {
+      "table": "contoso_case",
+      "package": "04 - Deferred Updates",
+      "file": "04 - Deferred Updates.dtsx",
+      "stagingTable": "[dbo].[stage_contoso_Case]",
+      "keyColumn": "contoso_caseid",
+      "columns": [
+        {
+          "column": "contoso_incidentid",
+          "lookupTarget": "contoso_incident;contoso_court"
+        }
+      ],
+      "typeColumns": [
+        "contoso_incidentidtype"
+      ],
+      "droppedTargets": [
+        "contoso_incident"
+      ],
+      "metaSeed": null,
+      "task": "Update Case Lookups",
+      "dtsid": "{27E61342-BBA0-52FC-A3BE-71C9F0341CA0}",
+      "connections": {
+        "project": [
+          "Dynamics CRM Connection Manager",
+          "Staging"
+        ],
+        "package": []
+      },
+      "unresolvedLookups": [],
+      "warnings": []
+    }
+  ]
+}

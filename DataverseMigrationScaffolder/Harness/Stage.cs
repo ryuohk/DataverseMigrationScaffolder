@@ -22,7 +22,7 @@ namespace DataverseMigrationScaffolder.HarnessGen
         public string FileName;            // e.g. stage_new_Project.sql
         public string Sql;
         public List<string> Columns;       // staging columns the template loads, in order
-        public string LegacyTable;         // e.g. [Legacy].[dbo].[CaseType]
+        public string LegacyTable;         // e.g. [Legacy].[dbo].[Project]
         public string LegacyAlias;         // m
         public string GuidAlias;           // glt
         public string Rest;                // everything after "FROM <legacy table> <alias>"

@@ -1,0 +1,163 @@
+[
+  {
+    "name": "fixture",
+    "args": [
+      "--manifest",
+      "Fixtures/scaffolder/manifest.json",
+      "--reference-dtproj",
+      "Fixtures/reference/ReferenceHarness.dtproj"
+    ]
+  },
+  {
+    "name": "fixture-options",
+    "args": [
+      "--manifest",
+      "Fixtures/scaffolder/manifest.json",
+      "--reference-dtproj",
+      "Fixtures/reference/ReferenceHarness.dtproj",
+      "--tables",
+      "contoso_category,contoso_case,contoso_court",
+      "--allow-missing-dependencies",
+      "--project-name",
+      "Parity Options"
+    ]
+  },
+  {
+    "name": "stage",
+    "args": [
+      "--manifest",
+      "Fixtures/scaffolder/manifest.json",
+      "--reference-dtproj",
+      "Fixtures/reference-stage/ReferenceHarness.dtproj"
+    ]
+  },
+  {
+    "name": "guidsync",
+    "args": [
+      "--manifest",
+      "Fixtures/scaffolder-statecode/manifest.json",
+      "--reference-dtproj",
+      "Fixtures/reference-guidsync/ReferenceHarness.dtproj"
+    ]
+  },
+  {
+    "name": "polymorphic",
+    "args": [
+      "--manifest",
+      "Fixtures/scaffolder-polymorphic/manifest.json",
+      "--reference-dtproj",
+      "Fixtures/reference-stage/ReferenceHarness.dtproj"
+    ]
+  },
+  {
+    "name": "guid-unique",
+    "args": [
+      "--manifest",
+      "Fixtures/scaffolder-unique/manifest.json",
+      "--reference-dtproj",
+      "Fixtures/reference-stage/ReferenceHarness.dtproj"
+    ]
+  },
+  {
+    "name": "tablename",
+    "args": [
+      "--manifest",
+      "Fixtures/scaffolder-tablename/manifest.json",
+      "--reference-dtproj",
+      "Fixtures/reference-tablename/ReferenceHarness.dtproj"
+    ]
+  },
+  {
+    "name": "builtin",
+    "args": [
+      "--manifest",
+      "Fixtures/scaffolder-tablename/manifest.json",
+      "--reference-dtproj",
+      "Fixtures/builtin/MigrationHarnessTemplate/MigrationHarnessTemplate.dtproj"
+    ]
+  },
+  {
+    "name": "owner",
+    "args": [
+      "--manifest",
+      "Fixtures/scaffolder/manifest.json",
+      "--reference-dtproj",
+      "Fixtures/reference-owner/ReferenceHarness.dtproj"
+    ]
+  },
+  {
+    "name": "secret-reference-level",
+    "args": [
+      "--manifest",
+      "Fixtures/scaffolder/manifest.json",
+      "--reference-dtproj",
+      "Fixtures/reference-secret/ReferenceHarness.dtproj"
+    ]
+  },
+  {
+    "name": "secret-dont-save",
+    "args": [
+      "--manifest",
+      "Fixtures/scaffolder/manifest.json",
+      "--reference-dtproj",
+      "Fixtures/reference-secret/ReferenceHarness.dtproj",
+      "--protection",
+      "DontSaveSensitive"
+    ]
+  },
+  {
+    "name": "fixture-dont-save",
+    "args": [
+      "--manifest",
+      "Fixtures/scaffolder/manifest.json",
+      "--reference-dtproj",
+      "Fixtures/reference/ReferenceHarness.dtproj",
+      "--protection",
+      "DontSaveSensitive"
+    ]
+  },
+  {
+    "name": "error-guid-columns",
+    "args": [
+      "--manifest",
+      "Fixtures/scaffolder/manifest.json",
+      "--reference-dtproj",
+      "Fixtures/reference-guidsync/ReferenceHarness.dtproj"
+    ],
+    "error": "contoso_category: the reference flow writes statecode to [dbo].[guid_contoso_Category], but the scaffolder's GUID table script does not create it; regenerate the scripts with a scaffolder version that does, or stop writing them in the reference flow"
+  },
+  {
+    "name": "error-stage-sql",
+    "args": [
+      "--manifest",
+      "Fixtures/scaffolder/manifest.json",
+      "--reference-dtproj",
+      "Fixtures/reference-stage-bad/ReferenceHarness.dtproj"
+    ],
+    "error": "Staging template stage_contoso_Category.sql: unsupported select expression 'UPPER(m.[formid])'; use <alias>.[<column>]"
+  },
+  {
+    "name": "error-unknown-table",
+    "args": [
+      "--manifest",
+      "Fixtures/scaffolder/manifest.json",
+      "--reference-dtproj",
+      "Fixtures/reference/ReferenceHarness.dtproj",
+      "--tables",
+      "contoso_nope"
+    ],
+    "errorContains": "not found in manifest: contoso_nope"
+  },
+  {
+    "name": "error-protection",
+    "args": [
+      "--manifest",
+      "Fixtures/scaffolder/manifest.json",
+      "--reference-dtproj",
+      "Fixtures/reference/ReferenceHarness.dtproj",
+      "--protection",
+      "EncryptAllWithPassword"
+    ],
+    "errorContains": "EncryptAllWithPassword"
+  }
+]

@@ -1,0 +1,2018 @@
+﻿<?xml version="1.0"?>
+<DTS:Executable xmlns:DTS="www.microsoft.com/SqlServer/Dts"
+  DTS:refId="Package"
+  DTS:CreationDate="1/14/2026 9:46:58 PM"
+  DTS:CreationName="Microsoft.Package"
+  DTS:CreatorComputerName="EXAMPLE-SQL"
+  DTS:CreatorName="EXAMPLE\user"
+  DTS:DTSID="{50F898C2-0A36-462C-8D5D-0FAAFBF62C66}"
+  DTS:ExecutableType="Microsoft.Package"
+  DTS:LastModifiedProductVersion="17.0.1010.2"
+  DTS:LocaleID="1033"
+  DTS:ObjectName="01b - Harness Code Tables"
+  DTS:PackageType="5"
+  DTS:VersionBuild="310"
+  DTS:VersionGUID="{86D7B0C2-819C-4B3B-8D8B-EE8C8F6A10EE}">
+  <DTS:Property
+    DTS:Name="PackageFormatVersion">8</DTS:Property>
+  <DTS:ConnectionManagers>
+    <DTS:ConnectionManager
+      DTS:refId="Package.ConnectionManagers[1 - Code Tables.sql]"
+      DTS:CreationName="FILE"
+      DTS:DTSID="{119C953E-BDE9-48E4-A26F-9FC919182D16}"
+      DTS:ObjectName="1 - Code Tables.sql">
+      <DTS:ObjectData>
+        <DTS:ConnectionManager
+          DTS:ConnectionString="C:\example\1 - Code Tables.sql" />
+      </DTS:ObjectData>
+    </DTS:ConnectionManager>
+    <DTS:ConnectionManager
+      DTS:refId="Package.ConnectionManagers[CodeTables_StageTables_NoPK_WithOwnerFields.sql]"
+      DTS:CreationName="FILE"
+      DTS:DTSID="{22D5B68F-11F1-4729-A81C-A0FE94219834}"
+      DTS:ObjectName="CodeTables_StageTables_NoPK_WithOwnerFields.sql">
+      <DTS:ObjectData>
+        <DTS:ConnectionManager
+          DTS:ConnectionString="C:\example\CodeTables_StageTables_NoPK_WithOwnerFields.sql" />
+      </DTS:ObjectData>
+    </DTS:ConnectionManager>
+    <DTS:ConnectionManager
+      DTS:refId="Package.ConnectionManagers[CodeTables_StageTables_NoPK_WithOwnerFields_CreatedDate.sql]"
+      DTS:CreationName="FILE"
+      DTS:DTSID="{7520213C-3B1D-4BFE-A7D0-DF43F7064B2A}"
+      DTS:ObjectName="CodeTables_StageTables_NoPK_WithOwnerFields_CreatedDate.sql">
+      <DTS:ObjectData>
+        <DTS:ConnectionManager
+          DTS:ConnectionString="C:\example\CodeTables_StageTables_NoPK_WithOwnerFields_CreatedDate.sql" />
+      </DTS:ObjectData>
+    </DTS:ConnectionManager>
+  </DTS:ConnectionManagers>
+  <DTS:Variables />
+  <DTS:Executables>
+    <DTS:Executable
+      DTS:refId="Package\Migrate Category"
+      DTS:CreationName="Microsoft.Pipeline"
+      DTS:Description="Data Flow Task"
+      DTS:DTSID="{C211BC73-5781-439E-946E-1BC028335E85}"
+      DTS:ExecutableType="Microsoft.Pipeline"
+      DTS:LocaleID="-1"
+      DTS:ObjectName="Migrate Category"
+      DTS:TaskContact="Performs high-performance data extraction, transformation and loading;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1">
+      <DTS:Variables />
+      <DTS:ObjectData>
+        <pipeline
+          version="1">
+          <components>
+            <component
+              refId="Package\Migrate Category\Conditional Split"
+              componentClassID="Microsoft.ConditionalSplit"
+              contactInfo="Conditional Split;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;0"
+              description="Routes data rows to different outputs depending on the content of the data. Use conditions (SSIS expressions) to specify which rows are routed. For example, separate records that need to be cleaned from those that are ready to be loaded or route only a subset of records."
+              name="Conditional Split"
+              usesDispositions="true">
+              <inputs>
+                <input
+                  refId="Package\Migrate Category\Conditional Split.Inputs[Conditional Split Input]"
+                  description="Input to the Conditional Split Transformation"
+                  name="Conditional Split Input">
+                  <inputColumns>
+                    <inputColumn
+                      refId="Package\Migrate Category\Conditional Split.Inputs[Conditional Split Input].Columns[contoso_categoryid]"
+                      cachedCodepage="1252"
+                      cachedDataType="str"
+                      cachedLength="100"
+                      cachedName="contoso_categoryid"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_categoryid]" />
+                  </inputColumns>
+                  <externalMetadataColumns />
+                </input>
+              </inputs>
+              <outputs>
+                <output
+                  refId="Package\Migrate Category\Conditional Split.Outputs[Create]"
+                  description="Output 3 of the Conditional Split Transformation"
+                  errorOrTruncationOperation="Computation"
+                  errorRowDisposition="FailComponent"
+                  exclusionGroup="1"
+                  name="Create"
+                  synchronousInputId="Package\Migrate Category\Conditional Split.Inputs[Conditional Split Input]"
+                  truncationRowDisposition="FailComponent">
+                  <properties>
+                    <property
+                      containsID="true"
+                      dataType="System.String"
+                      description="Specifies the expression. This expression version uses lineage identifiers instead of column names."
+                      name="Expression">[ISNULL](#{Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_categoryid]})</property>
+                    <property
+                      containsID="true"
+                      dataType="System.String"
+                      description="Specifies the friendly version of the expression. This expression version uses column names."
+                      expressionType="Notify"
+                      name="FriendlyExpression">ISNULL(contoso_categoryid)</property>
+                    <property
+                      dataType="System.Int32"
+                      description="Specifies the position of the condition in the list of conditions that the transformation evaluates. The evaluation order is from the lowest to the highest value."
+                      name="EvaluationOrder">0</property>
+                  </properties>
+                  <externalMetadataColumns />
+                </output>
+                <output
+                  refId="Package\Migrate Category\Conditional Split.Outputs[Update]"
+                  description="Default Output of the Conditional Split Transformation"
+                  exclusionGroup="1"
+                  name="Update"
+                  synchronousInputId="Package\Migrate Category\Conditional Split.Inputs[Conditional Split Input]">
+                  <properties>
+                    <property
+                      dataType="System.Boolean"
+                      name="IsDefaultOut">true</property>
+                  </properties>
+                  <externalMetadataColumns />
+                </output>
+                <output
+                  refId="Package\Migrate Category\Conditional Split.Outputs[Conditional Split Error Output]"
+                  description="Error Output of the Conditional Split Transformation"
+                  exclusionGroup="1"
+                  isErrorOut="true"
+                  name="Conditional Split Error Output"
+                  synchronousInputId="Package\Migrate Category\Conditional Split.Inputs[Conditional Split Input]">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\Migrate Category\Conditional Split.Outputs[Conditional Split Error Output].Columns[ErrorCode]"
+                      dataType="i4"
+                      lineageId="Package\Migrate Category\Conditional Split.Outputs[Conditional Split Error Output].Columns[ErrorCode]"
+                      name="ErrorCode"
+                      specialFlags="1" />
+                    <outputColumn
+                      refId="Package\Migrate Category\Conditional Split.Outputs[Conditional Split Error Output].Columns[ErrorColumn]"
+                      dataType="i4"
+                      lineageId="Package\Migrate Category\Conditional Split.Outputs[Conditional Split Error Output].Columns[ErrorColumn]"
+                      name="ErrorColumn"
+                      specialFlags="2" />
+                  </outputColumns>
+                  <externalMetadataColumns />
+                </output>
+              </outputs>
+            </component>
+            <component
+              refId="Package\Migrate Category\Dynamics CRM Destination - Create"
+              componentClassID="Microsoft.ManagedComponentHost"
+              contactInfo="KingswaySoft Inc.; http://www.kingswaysoft.com; support@kingswaysoft.com; Copyright (c) 2011-2025 KingswaySoft Inc."
+              description="Populate data into Microsoft Dynamics 365 CE/CRM."
+              name="Dynamics CRM Destination - Create"
+              usesDispositions="true"
+              version="4">
+              <properties>
+                <property
+                  dataType="System.String"
+                  description="Destination entity to write data."
+                  expressionType="Notify"
+                  name="DestinationEntity">contoso_category</property>
+                <property
+                  dataType="System.Int32"
+                  description="Specifies how data is written to CDS/Dynamics CRM server."
+                  name="ActionType"
+                  typeConverter="KingswaySoft.IntegrationToolkit.DynamicsCrm.DestinationActionType">1</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Specifies whether the values of CDS/CRM lookup fields should be removed if the reference records cannot be found. "
+                  expressionType="Notify"
+                  name="RemoveUnresolvableReferences">false</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Specifies whether duplicate detection should be enabled when creating or updating CDS/CRM records. Duplicate records are determined by the duplicate detection rules and settings defined in CDS or Microsoft Dynamics CRM server."
+                  expressionType="Notify"
+                  name="EnableSystemDuplicateDetection">false</property>
+                <property
+                  dataType="System.Int32"
+                  description="Specify the matching criteria to be used when performing an update or upsert. "
+                  expressionType="Notify"
+                  name="RecordMatchingCriteria"
+                  typeConverter="KingswaySoft.IntegrationToolkit.Common.DescriptiveEnumTypeConverter`1[[KingswaySoft.IntegrationToolkit.DynamicsCrm.RecordMatchingCriteria">0</property>
+                <property
+                  dataType="System.String"
+                  description="Specify the key fields to be used to determine the matching records that exist in CDS/CRM for either Upsert/Update action or source duplicate optimization."
+                  expressionType="Notify"
+                  name="RecordMatchingKeyFields"></property>
+                <property
+                  dataType="System.Boolean"
+                  description="Specifies whether to ignore those NULL-valued fields."
+                  expressionType="Notify"
+                  name="IgnoreNullValuedFields">false</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Specifies whether to ignore those fields that have no value changes in the target system. "
+                  expressionType="Notify"
+                  name="IgnoreUnchangedFields">false</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Specify whether to remove those invalid characters before writing to CDS/CRM."
+                  expressionType="Notify"
+                  name="RemoveInvalidCharacters">false</property>
+                <property
+                  dataType="System.String"
+                  description="Specify the flag field(s) that are used to track the source of changes. The field(s) will not posted to CDS/CRM server unless there are changes to other fields if specified. &quot;Ignore Unchange Fields&quot; option is required in order for the specified flag field(s) to work. "
+                  expressionType="Notify"
+                  name="ChangeFlagFields"></property>
+                <property
+                  dataType="System.Int32"
+                  description="Specifies what action will be taken when multiple matches are found with Upsert action."
+                  expressionType="Notify"
+                  name="HandlingOfMultipleMatches"
+                  typeConverter="KingswaySoft.IntegrationToolkit.Common.DescriptiveEnumTypeConverter`1[[KingswaySoft.IntegrationToolkit.DynamicsCrm.HandlingOfMultipleMatches">0</property>
+                <property
+                  dataType="System.Int32"
+                  description="Specify whether to use optimizations when there are duplicate records form the source system."
+                  expressionType="Notify"
+                  name="OptimizationOnSourceDuplicates"
+                  typeConverter="KingswaySoft.IntegrationToolkit.Common.DescriptiveEnumTypeConverter`1[[KingswaySoft.IntegrationToolkit.DynamicsCrm.OptimizationOnSourceDuplicates">0</property>
+                <property
+                  dataType="System.String"
+                  description="Workflow or action to be executed."
+                  expressionType="Notify"
+                  name="WorkflowAction"></property>
+                <property
+                  dataType="System.Int32"
+                  description="Specifies the number of records to be sent to CDS/Dynamics CRM server in each service call."
+                  expressionType="Notify"
+                  name="BatchSize">100</property>
+                <property
+                  dataType="System.Int32"
+                  description="Specify the total number or concurrent threads to write to CDS/CRM server simultaneously. "
+                  expressionType="Notify"
+                  name="ConcurrentWritingThreadsInTotal">20</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Specifies whether datetime values should be sent to CDS/CRM server in UTC format."
+                  expressionType="Notify"
+                  name="SendDateTimeInUtcFormat">true</property>
+                <property
+                  dataType="System.String"
+                  description="Specify whether to bypass synchronous logic, asynchronous logic or, both during writing. "
+                  expressionType="Notify"
+                  name="BypassBusinessLogicExecution"></property>
+                <property
+                  dataType="System.String"
+                  description="Specify the registered plug-in steps that should be bypassed during runtime instead of all synchronous and asynchronous custom logic. "
+                  expressionType="Notify"
+                  name="BypassBusinessLogicExecutionStepIds"></property>
+                <property
+                  dataType="System.String"
+                  name="UserComponentTypeName">KingswaySoft.IntegrationToolkit.DynamicsCrm.CrmDestinationComponent</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Specify whether to use those homogeneous batch operation messages (such as CreateMultiple, UpdateMultiple, DeleteMultiple, etc.) for more efficient batch writing (if supported). "
+                  expressionType="Notify"
+                  name="UseHomogeneousBatchOperationMessages">false</property>
+              </properties>
+              <connections>
+                <connection
+                  refId="Package\Migrate Category\Dynamics CRM Destination - Create.Connections[DynamicsCRM]"
+                  connectionManagerID="{FDE9DA74-21D4-4CF4-B7E9-B279EEB3BA47}:external"
+                  connectionManagerRefId="Project.ConnectionManagers[Dynamics CRM Connection Manager]"
+                  description="Dynamics CRM Connection Manager"
+                  name="DynamicsCRM" />
+              </connections>
+              <inputs>
+                <input
+                  refId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input]"
+                  errorOrTruncationOperation="Insert"
+                  errorRowDisposition="RedirectRow"
+                  hasSideEffects="true"
+                  name="Input">
+                  <inputColumns>
+                    <inputColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input].Columns[contoso_activedate]"
+                      cachedDataType="dbTimeStamp2"
+                      cachedName="contoso_activedate"
+                      cachedScale="7"
+                      externalMetadataColumnId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input].ExternalColumns[contoso_activedate]"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_activedate]" />
+                    <inputColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input].Columns[contoso_category]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="contoso_category"
+                      externalMetadataColumnId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input].ExternalColumns[contoso_category]"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_category]" />
+                    <inputColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input].Columns[contoso_categorycode]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="contoso_categorycode"
+                      externalMetadataColumnId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input].ExternalColumns[contoso_categorycode]"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_categorycode]" />
+                    <inputColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input].Columns[contoso_expirationdate]"
+                      cachedDataType="dbTimeStamp2"
+                      cachedName="contoso_expirationdate"
+                      cachedScale="7"
+                      externalMetadataColumnId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input].ExternalColumns[contoso_expirationdate]"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_expirationdate]" />
+                    <inputColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input].Columns[contoso_formid]"
+                      cachedDataType="wstr"
+                      cachedLength="500"
+                      cachedName="contoso_formid"
+                      externalMetadataColumnId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input].ExternalColumns[contoso_formid]"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_formid]" />
+                    <inputColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input].Columns[contoso_legacyid]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="contoso_legacyid"
+                      externalMetadataColumnId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input].ExternalColumns[contoso_legacyid]"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_legacyid]" />
+                    <inputColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input].Columns[contoso_categoryid]"
+                      cachedCodepage="1252"
+                      cachedDataType="str"
+                      cachedLength="100"
+                      cachedName="contoso_categoryid"
+                      externalMetadataColumnId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input].ExternalColumns[contoso_categoryid]"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_categoryid]" />
+                  </inputColumns>
+                  <externalMetadataColumns
+                    isUsed="True">
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input].ExternalColumns[contoso_activedate]"
+                      dataType="dbTimeStamp"
+                      name="contoso_activedate">
+                      <properties>
+                        <property
+                          dataType="System.String"
+                          name="FieldType">DateTime</property>
+                        <property
+                          dataType="System.String"
+                          name="LookupTypes"></property>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input].ExternalColumns[contoso_category]"
+                      dataType="wstr"
+                      length="100"
+                      name="contoso_category">
+                      <properties>
+                        <property
+                          dataType="System.String"
+                          name="FieldType">String</property>
+                        <property
+                          dataType="System.String"
+                          name="LookupTypes"></property>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input].ExternalColumns[contoso_categorycode]"
+                      dataType="wstr"
+                      length="100"
+                      name="contoso_categorycode">
+                      <properties>
+                        <property
+                          dataType="System.String"
+                          name="FieldType">String</property>
+                        <property
+                          dataType="System.String"
+                          name="LookupTypes"></property>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input].ExternalColumns[contoso_expirationdate]"
+                      dataType="dbTimeStamp"
+                      name="contoso_expirationdate">
+                      <properties>
+                        <property
+                          dataType="System.String"
+                          name="FieldType">DateTime</property>
+                        <property
+                          dataType="System.String"
+                          name="LookupTypes"></property>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input].ExternalColumns[contoso_formid]"
+                      dataType="wstr"
+                      length="500"
+                      name="contoso_formid">
+                      <properties>
+                        <property
+                          dataType="System.String"
+                          name="FieldType">String</property>
+                        <property
+                          dataType="System.String"
+                          name="LookupTypes"></property>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input].ExternalColumns[contoso_legacyid]"
+                      dataType="wstr"
+                      length="100"
+                      name="contoso_legacyid">
+                      <properties>
+                        <property
+                          dataType="System.String"
+                          name="FieldType">String</property>
+                        <property
+                          dataType="System.String"
+                          name="LookupTypes"></property>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input].ExternalColumns[createdby]"
+                      dataType="guid"
+                      name="createdby">
+                      <properties>
+                        <property
+                          dataType="System.String"
+                          name="FieldType">Lookup</property>
+                        <property
+                          dataType="System.String"
+                          name="LookupTypes">systemuser</property>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input].ExternalColumns[importsequencenumber]"
+                      dataType="i4"
+                      name="importsequencenumber">
+                      <properties>
+                        <property
+                          dataType="System.String"
+                          name="FieldType">Integer</property>
+                        <property
+                          dataType="System.String"
+                          name="LookupTypes"></property>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input].ExternalColumns[contoso_categoryid]"
+                      dataType="guid"
+                      name="contoso_categoryid">
+                      <properties>
+                        <property
+                          dataType="System.String"
+                          name="FieldType">Uniqueidentifier</property>
+                        <property
+                          dataType="System.String"
+                          name="LookupTypes"></property>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input].ExternalColumns[overriddencreatedon]"
+                      dataType="dbTimeStamp"
+                      name="overriddencreatedon">
+                      <properties>
+                        <property
+                          dataType="System.String"
+                          name="FieldType">DateTime</property>
+                        <property
+                          dataType="System.String"
+                          name="LookupTypes"></property>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input].ExternalColumns[ownerid]"
+                      dataType="guid"
+                      name="ownerid">
+                      <properties>
+                        <property
+                          dataType="System.String"
+                          name="FieldType">Owner</property>
+                        <property
+                          dataType="System.String"
+                          name="LookupTypes">systemuser;team</property>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input].ExternalColumns[owneridtype]"
+                      dataType="wstr"
+                      length="64"
+                      name="owneridtype">
+                      <properties>
+                        <property
+                          dataType="System.String"
+                          name="FieldType">EntityName</property>
+                        <property
+                          dataType="System.String"
+                          name="LookupTypes"></property>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input].ExternalColumns[statecode]"
+                      dataType="i4"
+                      name="statecode">
+                      <properties>
+                        <property
+                          dataType="System.String"
+                          name="FieldType">State</property>
+                        <property
+                          dataType="System.String"
+                          name="LookupTypes"></property>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input].ExternalColumns[statuscode]"
+                      dataType="i4"
+                      name="statuscode">
+                      <properties>
+                        <property
+                          dataType="System.String"
+                          name="FieldType">Status</property>
+                        <property
+                          dataType="System.String"
+                          name="LookupTypes"></property>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input].ExternalColumns[timezoneruleversionnumber]"
+                      dataType="i4"
+                      name="timezoneruleversionnumber">
+                      <properties>
+                        <property
+                          dataType="System.String"
+                          name="FieldType">Integer</property>
+                        <property
+                          dataType="System.String"
+                          name="LookupTypes"></property>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input].ExternalColumns[utcconversiontimezonecode]"
+                      dataType="i4"
+                      name="utcconversiontimezonecode">
+                      <properties>
+                        <property
+                          dataType="System.String"
+                          name="FieldType">Integer</property>
+                        <property
+                          dataType="System.String"
+                          name="LookupTypes"></property>
+                      </properties>
+                    </externalMetadataColumn>
+                  </externalMetadataColumns>
+                </input>
+              </inputs>
+              <outputs>
+                <output
+                  refId="Package\Migrate Category\Dynamics CRM Destination - Create.Outputs[Default Output]"
+                  exclusionGroup="1"
+                  name="Default Output"
+                  synchronousInputId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input]">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Create.Outputs[Default Output].Columns[SavedRecordId]"
+                      dataType="guid"
+                      lineageId="Package\Migrate Category\Dynamics CRM Destination - Create.Outputs[Default Output].Columns[SavedRecordId]"
+                      name="SavedRecordId" />
+                    <outputColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Create.Outputs[Default Output].Columns[IsNew]"
+                      dataType="bool"
+                      lineageId="Package\Migrate Category\Dynamics CRM Destination - Create.Outputs[Default Output].Columns[IsNew]"
+                      name="IsNew" />
+                  </outputColumns>
+                  <externalMetadataColumns
+                    isUsed="True" />
+                </output>
+                <output
+                  refId="Package\Migrate Category\Dynamics CRM Destination - Create.Outputs[Error Output]"
+                  exclusionGroup="1"
+                  isErrorOut="true"
+                  name="Error Output"
+                  synchronousInputId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input]">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Create.Outputs[Error Output].Columns[ErrorCode]"
+                      dataType="i4"
+                      lineageId="Package\Migrate Category\Dynamics CRM Destination - Create.Outputs[Error Output].Columns[ErrorCode]"
+                      name="ErrorCode"
+                      specialFlags="1" />
+                    <outputColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Create.Outputs[Error Output].Columns[ErrorColumn]"
+                      dataType="i4"
+                      lineageId="Package\Migrate Category\Dynamics CRM Destination - Create.Outputs[Error Output].Columns[ErrorColumn]"
+                      name="ErrorColumn"
+                      specialFlags="2" />
+                    <outputColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Create.Outputs[Error Output].Columns[ErrorMessage]"
+                      dataType="wstr"
+                      length="2048"
+                      lineageId="Package\Migrate Category\Dynamics CRM Destination - Create.Outputs[Error Output].Columns[ErrorMessage]"
+                      name="ErrorMessage" />
+                  </outputColumns>
+                  <externalMetadataColumns />
+                </output>
+              </outputs>
+            </component>
+            <component
+              refId="Package\Migrate Category\Dynamics CRM Destination - Update"
+              componentClassID="Microsoft.ManagedComponentHost"
+              contactInfo="KingswaySoft Inc.; http://www.kingswaysoft.com; support@kingswaysoft.com; Copyright (c) 2011-2025 KingswaySoft Inc."
+              description="Populate data into Microsoft Dynamics 365 CE/CRM."
+              name="Dynamics CRM Destination - Update"
+              usesDispositions="true"
+              version="4">
+              <properties>
+                <property
+                  dataType="System.String"
+                  description="Destination entity to write data."
+                  expressionType="Notify"
+                  name="DestinationEntity">contoso_category</property>
+                <property
+                  dataType="System.Int32"
+                  description="Specifies how data is written to CDS/Dynamics CRM server."
+                  name="ActionType"
+                  typeConverter="KingswaySoft.IntegrationToolkit.DynamicsCrm.DestinationActionType">3</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Specifies whether the values of CDS/CRM lookup fields should be removed if the reference records cannot be found. "
+                  expressionType="Notify"
+                  name="RemoveUnresolvableReferences">false</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Specifies whether duplicate detection should be enabled when creating or updating CDS/CRM records. Duplicate records are determined by the duplicate detection rules and settings defined in CDS or Microsoft Dynamics CRM server."
+                  expressionType="Notify"
+                  name="EnableSystemDuplicateDetection">false</property>
+                <property
+                  dataType="System.Int32"
+                  description="Specify the matching criteria to be used when performing an update or upsert. "
+                  expressionType="Notify"
+                  name="RecordMatchingCriteria"
+                  typeConverter="KingswaySoft.IntegrationToolkit.Common.DescriptiveEnumTypeConverter`1[[KingswaySoft.IntegrationToolkit.DynamicsCrm.RecordMatchingCriteria">1</property>
+                <property
+                  dataType="System.String"
+                  description="Specify the key fields to be used to determine the matching records that exist in CDS/CRM for either Upsert/Update action or source duplicate optimization."
+                  expressionType="Notify"
+                  name="RecordMatchingKeyFields"></property>
+                <property
+                  dataType="System.Boolean"
+                  description="Specifies whether to ignore those NULL-valued fields."
+                  expressionType="Notify"
+                  name="IgnoreNullValuedFields">false</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Specifies whether to ignore those fields that have no value changes in the target system. "
+                  expressionType="Notify"
+                  name="IgnoreUnchangedFields">false</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Specify whether to remove those invalid characters before writing to CDS/CRM."
+                  expressionType="Notify"
+                  name="RemoveInvalidCharacters">false</property>
+                <property
+                  dataType="System.String"
+                  description="Specify the flag field(s) that are used to track the source of changes. The field(s) will not posted to CDS/CRM server unless there are changes to other fields if specified. &quot;Ignore Unchange Fields&quot; option is required in order for the specified flag field(s) to work. "
+                  expressionType="Notify"
+                  name="ChangeFlagFields"></property>
+                <property
+                  dataType="System.Int32"
+                  description="Specifies what action will be taken when multiple matches are found with Upsert action."
+                  expressionType="Notify"
+                  name="HandlingOfMultipleMatches"
+                  typeConverter="KingswaySoft.IntegrationToolkit.Common.DescriptiveEnumTypeConverter`1[[KingswaySoft.IntegrationToolkit.DynamicsCrm.HandlingOfMultipleMatches">0</property>
+                <property
+                  dataType="System.Int32"
+                  description="Specify whether to use optimizations when there are duplicate records form the source system."
+                  expressionType="Notify"
+                  name="OptimizationOnSourceDuplicates"
+                  typeConverter="KingswaySoft.IntegrationToolkit.Common.DescriptiveEnumTypeConverter`1[[KingswaySoft.IntegrationToolkit.DynamicsCrm.OptimizationOnSourceDuplicates">0</property>
+                <property
+                  dataType="System.String"
+                  description="Workflow or action to be executed."
+                  expressionType="Notify"
+                  name="WorkflowAction"></property>
+                <property
+                  dataType="System.Int32"
+                  description="Specifies the number of records to be sent to CDS/Dynamics CRM server in each service call."
+                  expressionType="Notify"
+                  name="BatchSize">100</property>
+                <property
+                  dataType="System.Int32"
+                  description="Specify the total number or concurrent threads to write to CDS/CRM server simultaneously. "
+                  expressionType="Notify"
+                  name="ConcurrentWritingThreadsInTotal">20</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Specifies whether datetime values should be sent to CDS/CRM server in UTC format."
+                  expressionType="Notify"
+                  name="SendDateTimeInUtcFormat">true</property>
+                <property
+                  dataType="System.String"
+                  description="Specify whether to bypass synchronous logic, asynchronous logic or, both during writing. "
+                  expressionType="Notify"
+                  name="BypassBusinessLogicExecution"></property>
+                <property
+                  dataType="System.String"
+                  description="Specify the registered plug-in steps that should be bypassed during runtime instead of all synchronous and asynchronous custom logic. "
+                  expressionType="Notify"
+                  name="BypassBusinessLogicExecutionStepIds"></property>
+                <property
+                  dataType="System.String"
+                  name="UserComponentTypeName">KingswaySoft.IntegrationToolkit.DynamicsCrm.CrmDestinationComponent</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Specify whether to use those homogeneous batch operation messages (such as CreateMultiple, UpdateMultiple, DeleteMultiple, etc.) for more efficient batch writing (if supported). "
+                  expressionType="Notify"
+                  name="UseHomogeneousBatchOperationMessages">true</property>
+              </properties>
+              <connections>
+                <connection
+                  refId="Package\Migrate Category\Dynamics CRM Destination - Update.Connections[DynamicsCRM]"
+                  connectionManagerID="{FDE9DA74-21D4-4CF4-B7E9-B279EEB3BA47}:external"
+                  connectionManagerRefId="Project.ConnectionManagers[Dynamics CRM Connection Manager]"
+                  description="Dynamics CRM Connection Manager"
+                  name="DynamicsCRM" />
+              </connections>
+              <inputs>
+                <input
+                  refId="Package\Migrate Category\Dynamics CRM Destination - Update.Inputs[Input]"
+                  errorOrTruncationOperation="Insert"
+                  errorRowDisposition="RedirectRow"
+                  hasSideEffects="true"
+                  name="Input">
+                  <inputColumns>
+                    <inputColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Update.Inputs[Input].Columns[contoso_activedate]"
+                      cachedDataType="dbTimeStamp2"
+                      cachedName="contoso_activedate"
+                      cachedScale="7"
+                      externalMetadataColumnId="Package\Migrate Category\Dynamics CRM Destination - Update.Inputs[Input].ExternalColumns[contoso_activedate]"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_activedate]" />
+                    <inputColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Update.Inputs[Input].Columns[contoso_category]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="contoso_category"
+                      externalMetadataColumnId="Package\Migrate Category\Dynamics CRM Destination - Update.Inputs[Input].ExternalColumns[contoso_category]"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_category]" />
+                    <inputColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Update.Inputs[Input].Columns[contoso_categorycode]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="contoso_categorycode"
+                      externalMetadataColumnId="Package\Migrate Category\Dynamics CRM Destination - Update.Inputs[Input].ExternalColumns[contoso_categorycode]"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_categorycode]" />
+                    <inputColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Update.Inputs[Input].Columns[contoso_categoryid]"
+                      cachedCodepage="1252"
+                      cachedDataType="str"
+                      cachedLength="100"
+                      cachedName="contoso_categoryid"
+                      externalMetadataColumnId="Package\Migrate Category\Dynamics CRM Destination - Update.Inputs[Input].ExternalColumns[contoso_categoryid]"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_categoryid]" />
+                    <inputColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Update.Inputs[Input].Columns[contoso_expirationdate]"
+                      cachedDataType="dbTimeStamp2"
+                      cachedName="contoso_expirationdate"
+                      cachedScale="7"
+                      externalMetadataColumnId="Package\Migrate Category\Dynamics CRM Destination - Update.Inputs[Input].ExternalColumns[contoso_expirationdate]"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_expirationdate]" />
+                    <inputColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Update.Inputs[Input].Columns[contoso_formid]"
+                      cachedDataType="wstr"
+                      cachedLength="500"
+                      cachedName="contoso_formid"
+                      externalMetadataColumnId="Package\Migrate Category\Dynamics CRM Destination - Update.Inputs[Input].ExternalColumns[contoso_formid]"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_formid]" />
+                    <inputColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Update.Inputs[Input].Columns[contoso_legacyid]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="contoso_legacyid"
+                      externalMetadataColumnId="Package\Migrate Category\Dynamics CRM Destination - Update.Inputs[Input].ExternalColumns[contoso_legacyid]"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_legacyid]" />
+                  </inputColumns>
+                  <externalMetadataColumns
+                    isUsed="True">
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Update.Inputs[Input].ExternalColumns[contoso_activedate]"
+                      dataType="dbTimeStamp"
+                      name="contoso_activedate">
+                      <properties>
+                        <property
+                          dataType="System.String"
+                          name="FieldType">DateTime</property>
+                        <property
+                          dataType="System.String"
+                          name="LookupTypes"></property>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Update.Inputs[Input].ExternalColumns[contoso_category]"
+                      dataType="wstr"
+                      length="100"
+                      name="contoso_category">
+                      <properties>
+                        <property
+                          dataType="System.String"
+                          name="FieldType">String</property>
+                        <property
+                          dataType="System.String"
+                          name="LookupTypes"></property>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Update.Inputs[Input].ExternalColumns[contoso_categorycode]"
+                      dataType="wstr"
+                      length="100"
+                      name="contoso_categorycode">
+                      <properties>
+                        <property
+                          dataType="System.String"
+                          name="FieldType">String</property>
+                        <property
+                          dataType="System.String"
+                          name="LookupTypes"></property>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Update.Inputs[Input].ExternalColumns[contoso_categoryid]"
+                      dataType="guid"
+                      name="contoso_categoryid">
+                      <properties>
+                        <property
+                          dataType="System.String"
+                          name="FieldType">Uniqueidentifier</property>
+                        <property
+                          dataType="System.String"
+                          name="LookupTypes">contoso_category</property>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Update.Inputs[Input].ExternalColumns[contoso_expirationdate]"
+                      dataType="dbTimeStamp"
+                      name="contoso_expirationdate">
+                      <properties>
+                        <property
+                          dataType="System.String"
+                          name="FieldType">DateTime</property>
+                        <property
+                          dataType="System.String"
+                          name="LookupTypes"></property>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Update.Inputs[Input].ExternalColumns[contoso_formid]"
+                      dataType="wstr"
+                      length="500"
+                      name="contoso_formid">
+                      <properties>
+                        <property
+                          dataType="System.String"
+                          name="FieldType">String</property>
+                        <property
+                          dataType="System.String"
+                          name="LookupTypes"></property>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Update.Inputs[Input].ExternalColumns[contoso_legacyid]"
+                      dataType="wstr"
+                      length="100"
+                      name="contoso_legacyid">
+                      <properties>
+                        <property
+                          dataType="System.String"
+                          name="FieldType">String</property>
+                        <property
+                          dataType="System.String"
+                          name="LookupTypes"></property>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Update.Inputs[Input].ExternalColumns[modifiedby]"
+                      dataType="guid"
+                      name="modifiedby">
+                      <properties>
+                        <property
+                          dataType="System.String"
+                          name="FieldType">Lookup</property>
+                        <property
+                          dataType="System.String"
+                          name="LookupTypes">systemuser</property>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Update.Inputs[Input].ExternalColumns[ownerid]"
+                      dataType="guid"
+                      name="ownerid">
+                      <properties>
+                        <property
+                          dataType="System.String"
+                          name="FieldType">Owner</property>
+                        <property
+                          dataType="System.String"
+                          name="LookupTypes">systemuser;team</property>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Update.Inputs[Input].ExternalColumns[owneridtype]"
+                      dataType="wstr"
+                      length="64"
+                      name="owneridtype">
+                      <properties>
+                        <property
+                          dataType="System.String"
+                          name="FieldType">EntityName</property>
+                        <property
+                          dataType="System.String"
+                          name="LookupTypes"></property>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Update.Inputs[Input].ExternalColumns[statecode]"
+                      dataType="i4"
+                      name="statecode">
+                      <properties>
+                        <property
+                          dataType="System.String"
+                          name="FieldType">State</property>
+                        <property
+                          dataType="System.String"
+                          name="LookupTypes"></property>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Update.Inputs[Input].ExternalColumns[statuscode]"
+                      dataType="i4"
+                      name="statuscode">
+                      <properties>
+                        <property
+                          dataType="System.String"
+                          name="FieldType">Status</property>
+                        <property
+                          dataType="System.String"
+                          name="LookupTypes"></property>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Update.Inputs[Input].ExternalColumns[timezoneruleversionnumber]"
+                      dataType="i4"
+                      name="timezoneruleversionnumber">
+                      <properties>
+                        <property
+                          dataType="System.String"
+                          name="FieldType">Integer</property>
+                        <property
+                          dataType="System.String"
+                          name="LookupTypes"></property>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Update.Inputs[Input].ExternalColumns[utcconversiontimezonecode]"
+                      dataType="i4"
+                      name="utcconversiontimezonecode">
+                      <properties>
+                        <property
+                          dataType="System.String"
+                          name="FieldType">Integer</property>
+                        <property
+                          dataType="System.String"
+                          name="LookupTypes"></property>
+                      </properties>
+                    </externalMetadataColumn>
+                  </externalMetadataColumns>
+                </input>
+              </inputs>
+              <outputs>
+                <output
+                  refId="Package\Migrate Category\Dynamics CRM Destination - Update.Outputs[Default Output]"
+                  exclusionGroup="1"
+                  name="Default Output"
+                  synchronousInputId="Package\Migrate Category\Dynamics CRM Destination - Update.Inputs[Input]">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Update.Outputs[Default Output].Columns[SavedRecordId]"
+                      dataType="guid"
+                      lineageId="Package\Migrate Category\Dynamics CRM Destination - Update.Outputs[Default Output].Columns[SavedRecordId]"
+                      name="SavedRecordId" />
+                    <outputColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Update.Outputs[Default Output].Columns[IsNew]"
+                      dataType="bool"
+                      lineageId="Package\Migrate Category\Dynamics CRM Destination - Update.Outputs[Default Output].Columns[IsNew]"
+                      name="IsNew" />
+                  </outputColumns>
+                  <externalMetadataColumns
+                    isUsed="True" />
+                </output>
+                <output
+                  refId="Package\Migrate Category\Dynamics CRM Destination - Update.Outputs[Error Output]"
+                  exclusionGroup="1"
+                  isErrorOut="true"
+                  name="Error Output"
+                  synchronousInputId="Package\Migrate Category\Dynamics CRM Destination - Update.Inputs[Input]">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Update.Outputs[Error Output].Columns[ErrorCode]"
+                      dataType="i4"
+                      lineageId="Package\Migrate Category\Dynamics CRM Destination - Update.Outputs[Error Output].Columns[ErrorCode]"
+                      name="ErrorCode"
+                      specialFlags="1" />
+                    <outputColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Update.Outputs[Error Output].Columns[ErrorColumn]"
+                      dataType="i4"
+                      lineageId="Package\Migrate Category\Dynamics CRM Destination - Update.Outputs[Error Output].Columns[ErrorColumn]"
+                      name="ErrorColumn"
+                      specialFlags="2" />
+                    <outputColumn
+                      refId="Package\Migrate Category\Dynamics CRM Destination - Update.Outputs[Error Output].Columns[ErrorMessage]"
+                      dataType="wstr"
+                      length="2048"
+                      lineageId="Package\Migrate Category\Dynamics CRM Destination - Update.Outputs[Error Output].Columns[ErrorMessage]"
+                      name="ErrorMessage" />
+                  </outputColumns>
+                  <externalMetadataColumns />
+                </output>
+              </outputs>
+            </component>
+            <component
+              refId="Package\Migrate Category\OLE DB Destination - Error Table"
+              componentClassID="Microsoft.OLEDBDestination"
+              contactInfo="OLE DB Destination;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;4"
+              description="OLE DB Destination"
+              name="OLE DB Destination - Error Table"
+              usesDispositions="true"
+              version="4">
+              <properties>
+                <property
+                  dataType="System.Int32"
+                  description="The number of seconds before a command times out.  A value of 0 indicates an infinite time-out."
+                  name="CommandTimeout">0</property>
+                <property
+                  dataType="System.String"
+                  description="Specifies the name of the database object used to open a rowset."
+                  name="OpenRowset">[dbo].[Error]</property>
+                <property
+                  dataType="System.String"
+                  description="Specifies the variable that contains the name of the database object used to open a rowset."
+                  name="OpenRowsetVariable"></property>
+                <property
+                  dataType="System.String"
+                  description="The SQL command to be executed."
+                  name="SqlCommand"
+                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor, Microsoft.DataTransformationServices.Controls, Version=17.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91"></property>
+                <property
+                  dataType="System.Int32"
+                  description="Specifies the column code page to use when code page information is unavailable from the data source."
+                  name="DefaultCodePage">1252</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Forces the use of the DefaultCodePage property value when describing character data."
+                  name="AlwaysUseDefaultCodePage">false</property>
+                <property
+                  dataType="System.Int32"
+                  description="Specifies the mode used to access the database."
+                  name="AccessMode"
+                  typeConverter="AccessMode">0</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Indicates whether the values supplied for identity columns will be copied to the destination. If false, values for identity columns will be auto-generated at the destination. Applies only if fast load is turned on."
+                  name="FastLoadKeepIdentity">false</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Indicates whether the columns containing null will have null inserted in the destination. If false, columns containing null will have their default values inserted at the destination. Applies only if fast load is turned on."
+                  name="FastLoadKeepNulls">false</property>
+                <property
+                  dataType="System.String"
+                  description="Specifies options to be used with fast load.  Applies only if fast load is turned on."
+                  name="FastLoadOptions"></property>
+                <property
+                  dataType="System.Int32"
+                  description="Specifies when commits are issued during data insertion.  A value of 0 specifies that one commit will be issued at the end of data insertion.  Applies only if fast load is turned on."
+                  name="FastLoadMaxInsertCommitSize">2147483647</property>
+              </properties>
+              <connections>
+                <connection
+                  refId="Package\Migrate Category\OLE DB Destination - Error Table.Connections[OleDbConnection]"
+                  connectionManagerID="{B8417766-EC9D-4BA9-B311-D190769147F3}:external"
+                  connectionManagerRefId="Project.ConnectionManagers[Staging]"
+                  description="The OLE DB runtime connection used to access the database."
+                  name="OleDbConnection" />
+              </connections>
+              <inputs>
+                <input
+                  refId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input]"
+                  errorOrTruncationOperation="Insert"
+                  errorRowDisposition="FailComponent"
+                  hasSideEffects="true"
+                  name="OLE DB Destination Input">
+                  <inputColumns>
+                    <inputColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].Columns[ErrorCode]"
+                      cachedDataType="i4"
+                      cachedName="ErrorCode"
+                      externalMetadataColumnId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].ExternalColumns[ErrorCode]"
+                      lineageId="Package\Migrate Category\Dynamics CRM Destination - Create.Outputs[Error Output].Columns[ErrorCode]" />
+                    <inputColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].Columns[ErrorMessage]"
+                      cachedDataType="wstr"
+                      cachedLength="2048"
+                      cachedName="ErrorMessage"
+                      externalMetadataColumnId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].ExternalColumns[ErrorMessage]"
+                      lineageId="Package\Migrate Category\Dynamics CRM Destination - Create.Outputs[Error Output].Columns[ErrorMessage]" />
+                  </inputColumns>
+                  <externalMetadataColumns
+                    isUsed="True">
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].ExternalColumns[ErrorRowId]"
+                      dataType="i8"
+                      name="ErrorRowId" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].ExternalColumns[ErrorTimeUtc]"
+                      dataType="dbTimeStamp2"
+                      name="ErrorTimeUtc"
+                      scale="3" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].ExternalColumns[PackageName]"
+                      dataType="wstr"
+                      length="200"
+                      name="PackageName" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].ExternalColumns[TaskName]"
+                      dataType="wstr"
+                      length="200"
+                      name="TaskName" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].ExternalColumns[ComponentName]"
+                      dataType="wstr"
+                      length="200"
+                      name="ComponentName" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].ExternalColumns[EnvironmentName]"
+                      dataType="wstr"
+                      length="100"
+                      name="EnvironmentName" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].ExternalColumns[RecordId]"
+                      dataType="guid"
+                      name="RecordId" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].ExternalColumns[EntityLogicalName]"
+                      dataType="wstr"
+                      length="128"
+                      name="EntityLogicalName" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].ExternalColumns[Operation]"
+                      dataType="wstr"
+                      length="50"
+                      name="Operation" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].ExternalColumns[ExternalId]"
+                      dataType="wstr"
+                      length="200"
+                      name="ExternalId" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].ExternalColumns[ErrorCode]"
+                      dataType="i4"
+                      name="ErrorCode" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].ExternalColumns[ErrorMessage]"
+                      dataType="nText"
+                      name="ErrorMessage" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].ExternalColumns[ErrorDetails]"
+                      dataType="nText"
+                      name="ErrorDetails" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].ExternalColumns[SourceSystem]"
+                      dataType="wstr"
+                      length="100"
+                      name="SourceSystem" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].ExternalColumns[SourceRowKey]"
+                      dataType="wstr"
+                      length="200"
+                      name="SourceRowKey" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].ExternalColumns[RequestPayload]"
+                      dataType="nText"
+                      name="RequestPayload" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].ExternalColumns[ResponsePayload]"
+                      dataType="nText"
+                      name="ResponsePayload" />
+                  </externalMetadataColumns>
+                </input>
+              </inputs>
+              <outputs>
+                <output
+                  refId="Package\Migrate Category\OLE DB Destination - Error Table.Outputs[OLE DB Destination Error Output]"
+                  exclusionGroup="1"
+                  isErrorOut="true"
+                  name="OLE DB Destination Error Output"
+                  synchronousInputId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input]">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table.Outputs[OLE DB Destination Error Output].Columns[ErrorCode]"
+                      dataType="i4"
+                      lineageId="Package\Migrate Category\OLE DB Destination - Error Table.Outputs[OLE DB Destination Error Output].Columns[ErrorCode]"
+                      name="ErrorCode"
+                      specialFlags="1" />
+                    <outputColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table.Outputs[OLE DB Destination Error Output].Columns[ErrorColumn]"
+                      dataType="i4"
+                      lineageId="Package\Migrate Category\OLE DB Destination - Error Table.Outputs[OLE DB Destination Error Output].Columns[ErrorColumn]"
+                      name="ErrorColumn"
+                      specialFlags="2" />
+                  </outputColumns>
+                  <externalMetadataColumns />
+                </output>
+              </outputs>
+            </component>
+            <component
+              refId="Package\Migrate Category\OLE DB Destination - Error Table 1"
+              componentClassID="Microsoft.OLEDBDestination"
+              contactInfo="OLE DB Destination;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;4"
+              description="OLE DB Destination"
+              name="OLE DB Destination - Error Table 1"
+              usesDispositions="true"
+              version="4">
+              <properties>
+                <property
+                  dataType="System.Int32"
+                  description="The number of seconds before a command times out.  A value of 0 indicates an infinite time-out."
+                  name="CommandTimeout">0</property>
+                <property
+                  dataType="System.String"
+                  description="Specifies the name of the database object used to open a rowset."
+                  name="OpenRowset">[dbo].[Error]</property>
+                <property
+                  dataType="System.String"
+                  description="Specifies the variable that contains the name of the database object used to open a rowset."
+                  name="OpenRowsetVariable"></property>
+                <property
+                  dataType="System.String"
+                  description="The SQL command to be executed."
+                  name="SqlCommand"
+                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor, Microsoft.DataTransformationServices.Controls, Version=17.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91"></property>
+                <property
+                  dataType="System.Int32"
+                  description="Specifies the column code page to use when code page information is unavailable from the data source."
+                  name="DefaultCodePage">1252</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Forces the use of the DefaultCodePage property value when describing character data."
+                  name="AlwaysUseDefaultCodePage">false</property>
+                <property
+                  dataType="System.Int32"
+                  description="Specifies the mode used to access the database."
+                  name="AccessMode"
+                  typeConverter="AccessMode">0</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Indicates whether the values supplied for identity columns will be copied to the destination. If false, values for identity columns will be auto-generated at the destination. Applies only if fast load is turned on."
+                  name="FastLoadKeepIdentity">false</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Indicates whether the columns containing null will have null inserted in the destination. If false, columns containing null will have their default values inserted at the destination. Applies only if fast load is turned on."
+                  name="FastLoadKeepNulls">false</property>
+                <property
+                  dataType="System.String"
+                  description="Specifies options to be used with fast load.  Applies only if fast load is turned on."
+                  name="FastLoadOptions"></property>
+                <property
+                  dataType="System.Int32"
+                  description="Specifies when commits are issued during data insertion.  A value of 0 specifies that one commit will be issued at the end of data insertion.  Applies only if fast load is turned on."
+                  name="FastLoadMaxInsertCommitSize">2147483647</property>
+              </properties>
+              <connections>
+                <connection
+                  refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Connections[OleDbConnection]"
+                  connectionManagerID="{B8417766-EC9D-4BA9-B311-D190769147F3}:external"
+                  connectionManagerRefId="Project.ConnectionManagers[Staging]"
+                  description="The OLE DB runtime connection used to access the database."
+                  name="OleDbConnection" />
+              </connections>
+              <inputs>
+                <input
+                  refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input]"
+                  errorOrTruncationOperation="Insert"
+                  errorRowDisposition="FailComponent"
+                  hasSideEffects="true"
+                  name="OLE DB Destination Input">
+                  <inputColumns>
+                    <inputColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].Columns[ErrorCode]"
+                      cachedDataType="i4"
+                      cachedName="ErrorCode"
+                      externalMetadataColumnId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[ErrorCode]"
+                      lineageId="Package\Migrate Category\Dynamics CRM Destination - Update.Outputs[Error Output].Columns[ErrorCode]" />
+                    <inputColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].Columns[ErrorMessage]"
+                      cachedDataType="wstr"
+                      cachedLength="2048"
+                      cachedName="ErrorMessage"
+                      externalMetadataColumnId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[ErrorMessage]"
+                      lineageId="Package\Migrate Category\Dynamics CRM Destination - Update.Outputs[Error Output].Columns[ErrorMessage]" />
+                  </inputColumns>
+                  <externalMetadataColumns
+                    isUsed="True">
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[ErrorRowId]"
+                      dataType="i8"
+                      name="ErrorRowId" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[ErrorTimeUtc]"
+                      dataType="dbTimeStamp2"
+                      name="ErrorTimeUtc"
+                      scale="3" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[PackageName]"
+                      dataType="wstr"
+                      length="200"
+                      name="PackageName" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[TaskName]"
+                      dataType="wstr"
+                      length="200"
+                      name="TaskName" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[ComponentName]"
+                      dataType="wstr"
+                      length="200"
+                      name="ComponentName" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[EnvironmentName]"
+                      dataType="wstr"
+                      length="100"
+                      name="EnvironmentName" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[RecordId]"
+                      dataType="guid"
+                      name="RecordId" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[EntityLogicalName]"
+                      dataType="wstr"
+                      length="128"
+                      name="EntityLogicalName" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[Operation]"
+                      dataType="wstr"
+                      length="50"
+                      name="Operation" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[ExternalId]"
+                      dataType="wstr"
+                      length="200"
+                      name="ExternalId" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[ErrorCode]"
+                      dataType="i4"
+                      name="ErrorCode" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[ErrorMessage]"
+                      dataType="nText"
+                      name="ErrorMessage" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[ErrorDetails]"
+                      dataType="nText"
+                      name="ErrorDetails" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[SourceSystem]"
+                      dataType="wstr"
+                      length="100"
+                      name="SourceSystem" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[SourceRowKey]"
+                      dataType="wstr"
+                      length="200"
+                      name="SourceRowKey" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[RequestPayload]"
+                      dataType="nText"
+                      name="RequestPayload" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[ResponsePayload]"
+                      dataType="nText"
+                      name="ResponsePayload" />
+                  </externalMetadataColumns>
+                </input>
+              </inputs>
+              <outputs>
+                <output
+                  refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Outputs[OLE DB Destination Error Output]"
+                  exclusionGroup="1"
+                  isErrorOut="true"
+                  name="OLE DB Destination Error Output"
+                  synchronousInputId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input]">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Outputs[OLE DB Destination Error Output].Columns[ErrorCode]"
+                      dataType="i4"
+                      lineageId="Package\Migrate Category\OLE DB Destination - Error Table 1.Outputs[OLE DB Destination Error Output].Columns[ErrorCode]"
+                      name="ErrorCode"
+                      specialFlags="1" />
+                    <outputColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Outputs[OLE DB Destination Error Output].Columns[ErrorColumn]"
+                      dataType="i4"
+                      lineageId="Package\Migrate Category\OLE DB Destination - Error Table 1.Outputs[OLE DB Destination Error Output].Columns[ErrorColumn]"
+                      name="ErrorColumn"
+                      specialFlags="2" />
+                  </outputColumns>
+                  <externalMetadataColumns />
+                </output>
+              </outputs>
+            </component>
+            <component
+              refId="Package\Migrate Category\OLE DB Source - Staging"
+              componentClassID="Microsoft.OLEDBSource"
+              contactInfo="OLE DB Source;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;7"
+              description="OLE DB Source"
+              name="OLE DB Source - Staging"
+              usesDispositions="true"
+              version="7">
+              <properties>
+                <property
+                  dataType="System.Int32"
+                  description="The number of seconds before a command times out.  A value of 0 indicates an infinite time-out."
+                  name="CommandTimeout">0</property>
+                <property
+                  dataType="System.String"
+                  description="Specifies the name of the database object used to open a rowset."
+                  name="OpenRowset">[dbo].[stage_contoso_Category]</property>
+                <property
+                  dataType="System.String"
+                  description="Specifies the variable that contains the name of the database object used to open a rowset."
+                  name="OpenRowsetVariable"></property>
+                <property
+                  dataType="System.String"
+                  description="The SQL command to be executed."
+                  name="SqlCommand"
+                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor, Microsoft.DataTransformationServices.Controls, Version=17.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91">--TO DO replace this query with the query for this entity
+select *
+from harntest.dbo.Flattened_StagingTemplateEntity
+where ModifiedOn = '01/01/1900'</property>
+                <property
+                  dataType="System.String"
+                  description="The variable that contains the SQL command to be executed."
+                  name="SqlCommandVariable"></property>
+                <property
+                  dataType="System.Int32"
+                  description="Specifies the column code page to use when code page information is unavailable from the data source."
+                  name="DefaultCodePage">1252</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Forces the use of the DefaultCodePage property value when describing character data."
+                  name="AlwaysUseDefaultCodePage">false</property>
+                <property
+                  dataType="System.Int32"
+                  description="Specifies the mode used to access the database."
+                  name="AccessMode"
+                  typeConverter="AccessMode">0</property>
+                <property
+                  dataType="System.String"
+                  description="The mappings between the parameters in the SQL command and variables."
+                  name="ParameterMapping"></property>
+              </properties>
+              <connections>
+                <connection
+                  refId="Package\Migrate Category\OLE DB Source - Staging.Connections[OleDbConnection]"
+                  connectionManagerID="{B8417766-EC9D-4BA9-B311-D190769147F3}:external"
+                  connectionManagerRefId="Project.ConnectionManagers[Staging]"
+                  description="The OLE DB runtime connection used to access the database."
+                  name="OleDbConnection" />
+              </connections>
+              <outputs>
+                <output
+                  refId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output]"
+                  name="OLE DB Source Output">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_activedate]"
+                      dataType="dbTimeStamp2"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].ExternalColumns[contoso_activedate]"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_activedate]"
+                      name="contoso_activedate"
+                      scale="7"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_category]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].ExternalColumns[contoso_category]"
+                      length="100"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_category]"
+                      name="contoso_category"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_categorycode]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].ExternalColumns[contoso_categorycode]"
+                      length="100"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_categorycode]"
+                      name="contoso_categorycode"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_categoryid]"
+                      codePage="1252"
+                      dataType="str"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].ExternalColumns[contoso_categoryid]"
+                      length="100"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_categoryid]"
+                      name="contoso_categoryid"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_expirationdate]"
+                      dataType="dbTimeStamp2"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].ExternalColumns[contoso_expirationdate]"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_expirationdate]"
+                      name="contoso_expirationdate"
+                      scale="7"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_formid]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].ExternalColumns[contoso_formid]"
+                      length="500"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_formid]"
+                      name="contoso_formid"
+                      truncationRowDisposition="FailComponent" />
+                    <outputColumn
+                      refId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_legacyid]"
+                      dataType="wstr"
+                      errorOrTruncationOperation="Conversion"
+                      errorRowDisposition="FailComponent"
+                      externalMetadataColumnId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].ExternalColumns[contoso_legacyid]"
+                      length="100"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_legacyid]"
+                      name="contoso_legacyid"
+                      truncationRowDisposition="FailComponent" />
+                  </outputColumns>
+                  <externalMetadataColumns
+                    isUsed="True">
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].ExternalColumns[contoso_activedate]"
+                      dataType="dbTimeStamp2"
+                      name="contoso_activedate"
+                      scale="7" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].ExternalColumns[contoso_category]"
+                      dataType="wstr"
+                      length="100"
+                      name="contoso_category" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].ExternalColumns[contoso_categorycode]"
+                      dataType="wstr"
+                      length="100"
+                      name="contoso_categorycode" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].ExternalColumns[contoso_categoryid]"
+                      codePage="1252"
+                      dataType="str"
+                      length="100"
+                      name="contoso_categoryid" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].ExternalColumns[contoso_expirationdate]"
+                      dataType="dbTimeStamp2"
+                      name="contoso_expirationdate"
+                      scale="7" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].ExternalColumns[contoso_formid]"
+                      dataType="wstr"
+                      length="500"
+                      name="contoso_formid" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].ExternalColumns[contoso_legacyid]"
+                      dataType="wstr"
+                      length="100"
+                      name="contoso_legacyid" />
+                  </externalMetadataColumns>
+                </output>
+                <output
+                  refId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Error Output]"
+                  isErrorOut="true"
+                  name="OLE DB Source Error Output">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Error Output].Columns[contoso_activedate]"
+                      dataType="dbTimeStamp2"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Error Output].Columns[contoso_activedate]"
+                      name="contoso_activedate"
+                      scale="7" />
+                    <outputColumn
+                      refId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Error Output].Columns[contoso_category]"
+                      dataType="wstr"
+                      length="100"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Error Output].Columns[contoso_category]"
+                      name="contoso_category" />
+                    <outputColumn
+                      refId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Error Output].Columns[contoso_categorycode]"
+                      dataType="wstr"
+                      length="100"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Error Output].Columns[contoso_categorycode]"
+                      name="contoso_categorycode" />
+                    <outputColumn
+                      refId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Error Output].Columns[contoso_categoryid]"
+                      codePage="1252"
+                      dataType="str"
+                      length="100"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Error Output].Columns[contoso_categoryid]"
+                      name="contoso_categoryid" />
+                    <outputColumn
+                      refId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Error Output].Columns[contoso_expirationdate]"
+                      dataType="dbTimeStamp2"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Error Output].Columns[contoso_expirationdate]"
+                      name="contoso_expirationdate"
+                      scale="7" />
+                    <outputColumn
+                      refId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Error Output].Columns[contoso_formid]"
+                      dataType="wstr"
+                      length="500"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Error Output].Columns[contoso_formid]"
+                      name="contoso_formid" />
+                    <outputColumn
+                      refId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Error Output].Columns[contoso_legacyid]"
+                      dataType="wstr"
+                      length="100"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Error Output].Columns[contoso_legacyid]"
+                      name="contoso_legacyid" />
+                    <outputColumn
+                      refId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Error Output].Columns[ErrorCode]"
+                      dataType="i4"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Error Output].Columns[ErrorCode]"
+                      name="ErrorCode"
+                      specialFlags="1" />
+                    <outputColumn
+                      refId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Error Output].Columns[ErrorColumn]"
+                      dataType="i4"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Error Output].Columns[ErrorColumn]"
+                      name="ErrorColumn"
+                      specialFlags="2" />
+                  </outputColumns>
+                  <externalMetadataColumns />
+                </output>
+              </outputs>
+            </component>
+            <component
+              refId="Package\Migrate Category\OLE DB Destination - GUID Table"
+              componentClassID="Microsoft.OLEDBDestination"
+              contactInfo="OLE DB Destination;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;4"
+              description="OLE DB Destination"
+              name="OLE DB Destination - GUID Table"
+              usesDispositions="true"
+              version="4">
+              <properties>
+                <property
+                  dataType="System.Int32"
+                  description="The number of seconds before a command times out.  A value of 0 indicates an infinite time-out."
+                  name="CommandTimeout">0</property>
+                <property
+                  dataType="System.String"
+                  description="Specifies the name of the database object used to open a rowset."
+                  name="OpenRowset">[dbo].[guid_contoso_Category]</property>
+                <property
+                  dataType="System.String"
+                  description="Specifies the variable that contains the name of the database object used to open a rowset."
+                  name="OpenRowsetVariable"></property>
+                <property
+                  dataType="System.String"
+                  description="The SQL command to be executed."
+                  name="SqlCommand"
+                  UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor, Microsoft.DataTransformationServices.Controls, Version=17.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91"></property>
+                <property
+                  dataType="System.Int32"
+                  description="Specifies the column code page to use when code page information is unavailable from the data source."
+                  name="DefaultCodePage">1252</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Forces the use of the DefaultCodePage property value when describing character data."
+                  name="AlwaysUseDefaultCodePage">false</property>
+                <property
+                  dataType="System.Int32"
+                  description="Specifies the mode used to access the database."
+                  name="AccessMode"
+                  typeConverter="AccessMode">3</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Indicates whether the values supplied for identity columns will be copied to the destination. If false, values for identity columns will be auto-generated at the destination. Applies only if fast load is turned on."
+                  name="FastLoadKeepIdentity">false</property>
+                <property
+                  dataType="System.Boolean"
+                  description="Indicates whether the columns containing null will have null inserted in the destination. If false, columns containing null will have their default values inserted at the destination. Applies only if fast load is turned on."
+                  name="FastLoadKeepNulls">false</property>
+                <property
+                  dataType="System.String"
+                  description="Specifies options to be used with fast load.  Applies only if fast load is turned on."
+                  name="FastLoadOptions">TABLOCK,CHECK_CONSTRAINTS</property>
+                <property
+                  dataType="System.Int32"
+                  description="Specifies when commits are issued during data insertion.  A value of 0 specifies that one commit will be issued at the end of data insertion.  Applies only if fast load is turned on."
+                  name="FastLoadMaxInsertCommitSize">1000</property>
+              </properties>
+              <connections>
+                <connection
+                  refId="Package\Migrate Category\OLE DB Destination - GUID Table.Connections[OleDbConnection]"
+                  connectionManagerID="{B8417766-EC9D-4BA9-B311-D190769147F3}:external"
+                  connectionManagerRefId="Project.ConnectionManagers[Staging]"
+                  description="The OLE DB runtime connection used to access the database."
+                  name="OleDbConnection" />
+              </connections>
+              <inputs>
+                <input
+                  refId="Package\Migrate Category\OLE DB Destination - GUID Table.Inputs[OLE DB Destination Input]"
+                  errorOrTruncationOperation="Insert"
+                  errorRowDisposition="FailComponent"
+                  hasSideEffects="true"
+                  name="OLE DB Destination Input">
+                  <inputColumns>
+                    <inputColumn
+                      refId="Package\Migrate Category\OLE DB Destination - GUID Table.Inputs[OLE DB Destination Input].Columns[contoso_legacyid]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="contoso_legacyid"
+                      externalMetadataColumnId="Package\Migrate Category\OLE DB Destination - GUID Table.Inputs[OLE DB Destination Input].ExternalColumns[contoso_legacyid]"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_legacyid]" />
+                    <inputColumn
+                      refId="Package\Migrate Category\OLE DB Destination - GUID Table.Inputs[OLE DB Destination Input].Columns[SavedRecordId]"
+                      cachedDataType="guid"
+                      cachedName="SavedRecordId"
+                      externalMetadataColumnId="Package\Migrate Category\OLE DB Destination - GUID Table.Inputs[OLE DB Destination Input].ExternalColumns[contoso_categoryid]"
+                      lineageId="Package\Migrate Category\Dynamics CRM Destination - Create.Outputs[Default Output].Columns[SavedRecordId]" />
+                  </inputColumns>
+                  <externalMetadataColumns
+                    isUsed="True">
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - GUID Table.Inputs[OLE DB Destination Input].ExternalColumns[contoso_categoryid]"
+                      codePage="1252"
+                      dataType="str"
+                      length="100"
+                      name="contoso_categoryid" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - GUID Table.Inputs[OLE DB Destination Input].ExternalColumns[contoso_legacyid]"
+                      dataType="wstr"
+                      length="100"
+                      name="contoso_legacyid" />
+                  </externalMetadataColumns>
+                </input>
+              </inputs>
+              <outputs>
+                <output
+                  refId="Package\Migrate Category\OLE DB Destination - GUID Table.Outputs[OLE DB Destination Error Output]"
+                  exclusionGroup="1"
+                  isErrorOut="true"
+                  name="OLE DB Destination Error Output"
+                  synchronousInputId="Package\Migrate Category\OLE DB Destination - GUID Table.Inputs[OLE DB Destination Input]">
+                  <outputColumns>
+                    <outputColumn
+                      refId="Package\Migrate Category\OLE DB Destination - GUID Table.Outputs[OLE DB Destination Error Output].Columns[ErrorCode]"
+                      dataType="i4"
+                      lineageId="Package\Migrate Category\OLE DB Destination - GUID Table.Outputs[OLE DB Destination Error Output].Columns[ErrorCode]"
+                      name="ErrorCode"
+                      specialFlags="1" />
+                    <outputColumn
+                      refId="Package\Migrate Category\OLE DB Destination - GUID Table.Outputs[OLE DB Destination Error Output].Columns[ErrorColumn]"
+                      dataType="i4"
+                      lineageId="Package\Migrate Category\OLE DB Destination - GUID Table.Outputs[OLE DB Destination Error Output].Columns[ErrorColumn]"
+                      name="ErrorColumn"
+                      specialFlags="2" />
+                  </outputColumns>
+                  <externalMetadataColumns />
+                </output>
+              </outputs>
+            </component>
+          </components>
+          <paths>
+            <path
+              refId="Package\Migrate Category.Paths[Create]"
+              endId="Package\Migrate Category\Dynamics CRM Destination - Create.Inputs[Input]"
+              name="Create"
+              startId="Package\Migrate Category\Conditional Split.Outputs[Create]" />
+            <path
+              refId="Package\Migrate Category.Paths[Error Output]"
+              endId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input]"
+              name="Error Output"
+              startId="Package\Migrate Category\Dynamics CRM Destination - Create.Outputs[Error Output]" />
+            <path
+              refId="Package\Migrate Category.Paths[Error Output1]"
+              endId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input]"
+              name="Error Output"
+              startId="Package\Migrate Category\Dynamics CRM Destination - Update.Outputs[Error Output]" />
+            <path
+              refId="Package\Migrate Category.Paths[OLE DB Source Output]"
+              endId="Package\Migrate Category\Conditional Split.Inputs[Conditional Split Input]"
+              name="OLE DB Source Output"
+              startId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output]" />
+            <path
+              refId="Package\Migrate Category.Paths[Update]"
+              endId="Package\Migrate Category\Dynamics CRM Destination - Update.Inputs[Input]"
+              name="Update"
+              startId="Package\Migrate Category\Conditional Split.Outputs[Update]" />
+            <path
+              refId="Package\Migrate Category.Paths[Default Output]"
+              endId="Package\Migrate Category\OLE DB Destination - GUID Table.Inputs[OLE DB Destination Input]"
+              name="Default Output"
+              startId="Package\Migrate Category\Dynamics CRM Destination - Create.Outputs[Default Output]" />
+          </paths>
+        </pipeline>
+      </DTS:ObjectData>
+    </DTS:Executable>
+  </DTS:Executables>
+  <DTS:DesignTimeProperties><![CDATA[<?xml version="1.0"?>
+<!--This CDATA section contains the layout information of the package. The section includes information such as (x,y) coordinates, width, and height.-->
+<!--If you manually edit this section and make a mistake, you can delete it. -->
+<!--The package will still be able to load normally but the previous layout information will be lost and the designer will automatically re-arrange the elements on the design surface.-->
+<Objects
+  Version="8">
+  <!--Each node below will contain properties that do not affect runtime behavior.-->
+  <Package
+    design-time-name="Package">
+    <LayoutInfo>
+      <GraphLayout
+        Capacity="8" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml">
+        <NodeLayout
+          Size="172,42"
+          Id="Package\Migrate Category"
+          TopLeft="56.5,361.57142857143" />
+      </GraphLayout>
+    </LayoutInfo>
+  </Package>
+  <TaskHost
+    design-time-name="Package\Migrate Category">
+    <LayoutInfo>
+      <GraphLayout
+        Capacity="16" xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:mssgm="clr-namespace:Microsoft.SqlServer.Graph.Model;assembly=Microsoft.SqlServer.Graph">
+        <NodeLayout
+          Size="245,42"
+          Id="Package\Migrate Category\OLE DB Destination - GUID Table"
+          TopLeft="330,410" />
+        <NodeLayout
+          Size="256,42"
+          Id="Package\Migrate Category\Dynamics CRM Destination - Create"
+          TopLeft="324.5,209.5" />
+        <NodeLayout
+          Size="258,42"
+          Id="Package\Migrate Category\Dynamics CRM Destination - Update"
+          TopLeft="5.50000000000006,209.5" />
+        <NodeLayout
+          Size="204,42"
+          Id="Package\Migrate Category\OLE DB Source - Staging"
+          TopLeft="350.5,5.5" />
+        <NodeLayout
+          Size="251,42"
+          Id="Package\Migrate Category\OLE DB Destination - Error Table 1"
+          TopLeft="9.00000000000006,311.5" />
+        <NodeLayout
+          Size="242,42"
+          Id="Package\Migrate Category\OLE DB Destination - Error Table"
+          TopLeft="331.5,311.5" />
+        <NodeLayout
+          Size="159,42"
+          Id="Package\Migrate Category\Conditional Split"
+          TopLeft="373,107.5" />
+        <EdgeLayout
+          Id="Package\Migrate Category.Paths[Error Output1]"
+          TopLeft="134.5,251.5">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,60"
+              Start="0,0"
+              End="0,52.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,52.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <mssgm:EdgeLabel
+              BoundingBox="-28.33638671875,20.533203125,56.6727734375,11.43359375"
+              RelativePosition="Any" />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package\Migrate Category.Paths[Error Output]"
+          TopLeft="452.5,251.5">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,60"
+              Start="0,0"
+              End="0,52.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,52.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <mssgm:EdgeLabel
+              BoundingBox="-28.33638671875,20.533203125,56.6727734375,11.43359375"
+              RelativePosition="Any" />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package\Migrate Category.Paths[Create]"
+          TopLeft="477.666666666667,149.5">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="-25.1666666666666,60"
+              Start="0,0"
+              End="-25.1666666666666,52.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,20.3586550435866" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,20.3586550435866"
+                    Point2="0,24.3586550435866"
+                    Point3="-4,24.3586550435866" />
+                  <mssgle:LineSegment
+                    End="-21.1666666666666,24.3586550435866" />
+                  <mssgle:CubicBezierSegment
+                    Point1="-21.1666666666666,24.3586550435866"
+                    Point2="-25.1666666666666,24.3586550435866"
+                    Point3="-25.1666666666666,28.3586550435866" />
+                  <mssgle:LineSegment
+                    End="-25.1666666666666,52.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <mssgm:EdgeLabel
+              BoundingBox="-27.6522005208333,29.3586550435866,30.137734375,9.5537109375"
+              RelativePosition="Any" />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package\Migrate Category.Paths[Update]"
+          TopLeft="427.333333333333,149.5">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="-292.833333333333,60"
+              Start="0,0"
+              End="-292.833333333333,52.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,20.3586550435865" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,20.3586550435865"
+                    Point2="0,24.3586550435865"
+                    Point3="-4,24.3586550435865" />
+                  <mssgle:LineSegment
+                    End="-288.833333333333,24.3586550435865" />
+                  <mssgle:CubicBezierSegment
+                    Point1="-288.833333333333,24.3586550435865"
+                    Point2="-292.833333333333,24.3586550435865"
+                    Point3="-292.833333333333,28.3586550435865" />
+                  <mssgle:LineSegment
+                    End="-292.833333333333,52.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <mssgm:EdgeLabel
+              BoundingBox="-162.696959635417,29.3586550435865,32.5605859375,11.609375"
+              RelativePosition="Any" />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package\Migrate Category.Paths[OLE DB Source Output]"
+          TopLeft="452.5,47.5">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,60"
+              Start="0,0"
+              End="0,52.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,52.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <mssgm:EdgeLabel
+              BoundingBox="0,0,0,0"
+              RelativePosition="Any" />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+      </GraphLayout>
+    </LayoutInfo>
+  </TaskHost>
+</Objects>]]></DTS:DesignTimeProperties>
+</DTS:Executable>

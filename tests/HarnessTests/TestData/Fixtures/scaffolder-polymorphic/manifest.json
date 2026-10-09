@@ -1,0 +1,529 @@
+{
+  "manifestVersion": 1,
+  "generator": {
+    "tool": "Dataverse Migration Scaffolder",
+    "version": "1.2026.7.8",
+    "generatedOn": "2026-09-26T00:00:00-04:00"
+  },
+  "options": {
+    "schema": "dbo",
+    "stagingPrefix": "stage_",
+    "guidPrefix": "guid_",
+    "matchKeySuffixes": "legacyid",
+    "batchSize": 40,
+    "stagingGenerated": true,
+    "guidGenerated": true,
+    "stagingMode": "dropAndRecreate",
+    "guidMode": "createIfMissing",
+    "matchKeyIndexes": true,
+    "dependencyRankingExclusions": []
+  },
+  "tierCount": 3,
+  "tableCount": 4,
+  "files": [
+    {
+      "fileName": "01_create_staging.sql",
+      "kind": "staging",
+      "tier": 0,
+      "tierPart": 1,
+      "tierTotalParts": 1,
+      "tableCount": 2,
+      "tables": [
+        "contoso_category",
+        "contoso_court"
+      ]
+    },
+    {
+      "fileName": "01_create_guid.sql",
+      "kind": "guid",
+      "tier": 0,
+      "tierPart": 1,
+      "tierTotalParts": 1,
+      "tableCount": 2,
+      "tables": [
+        "contoso_category",
+        "contoso_court"
+      ]
+    },
+    {
+      "fileName": "02_create_staging.sql",
+      "kind": "staging",
+      "tier": 1,
+      "tierPart": 1,
+      "tierTotalParts": 1,
+      "tableCount": 1,
+      "tables": [
+        "contoso_case"
+      ]
+    },
+    {
+      "fileName": "02_create_guid.sql",
+      "kind": "guid",
+      "tier": 1,
+      "tierPart": 1,
+      "tierTotalParts": 1,
+      "tableCount": 1,
+      "tables": [
+        "contoso_case"
+      ]
+    },
+    {
+      "fileName": "03_create_staging.sql",
+      "kind": "staging",
+      "tier": 2,
+      "tierPart": 1,
+      "tierTotalParts": 1,
+      "tableCount": 1,
+      "tables": [
+        "contoso_incident"
+      ]
+    },
+    {
+      "fileName": "03_create_guid.sql",
+      "kind": "guid",
+      "tier": 2,
+      "tierPart": 1,
+      "tierTotalParts": 1,
+      "tableCount": 1,
+      "tables": [
+        "contoso_incident"
+      ]
+    }
+  ],
+  "tables": [
+    {
+      "logicalName": "contoso_category",
+      "schemaName": "contoso_Category",
+      "displayName": "Category",
+      "prefix": "jn",
+      "tier": 0,
+      "tierPart": 1,
+      "tierTotalParts": 1,
+      "fileNumber": 1,
+      "stagingFile": "01_create_staging.sql",
+      "guidFile": "01_create_guid.sql",
+      "stagingTable": "[dbo].[stage_contoso_Category]",
+      "guidTable": "[dbo].[guid_contoso_Category]",
+      "primaryIdAttribute": "contoso_categoryid",
+      "primaryNameAttribute": "contoso_category",
+      "isCycleMember": false,
+      "matchKeys": [
+        "contoso_legacyid"
+      ],
+      "dependencies": [],
+      "externalDependencies": [],
+      "droppedDependencies": [],
+      "columns": [
+        {
+          "name": "contoso_activedate",
+          "sqlType": "DATETIME2(7)",
+          "dataverseType": "DateTime",
+          "isPrimaryId": false,
+          "isPrimaryName": false,
+          "isMatchKey": false,
+          "isLookup": false,
+          "isPolymorphic": false,
+          "isCustom": true
+        },
+        {
+          "name": "contoso_category",
+          "sqlType": "NVARCHAR(100)",
+          "dataverseType": "String",
+          "isPrimaryId": false,
+          "isPrimaryName": false,
+          "isMatchKey": false,
+          "isLookup": false,
+          "isPolymorphic": false,
+          "isCustom": true
+        },
+        {
+          "name": "contoso_categorycode",
+          "sqlType": "NVARCHAR(100)",
+          "dataverseType": "String",
+          "isPrimaryId": false,
+          "isPrimaryName": false,
+          "isMatchKey": false,
+          "isLookup": false,
+          "isPolymorphic": false,
+          "isCustom": true
+        },
+        {
+          "name": "contoso_categoryid",
+          "sqlType": "NVARCHAR(100)",
+          "dataverseType": "Uniqueidentifier",
+          "isPrimaryId": true,
+          "isPrimaryName": false,
+          "isMatchKey": false,
+          "isLookup": false,
+          "isPolymorphic": false,
+          "isCustom": true
+        },
+        {
+          "name": "contoso_expirationdate",
+          "sqlType": "DATETIME2(7)",
+          "dataverseType": "DateTime",
+          "isPrimaryId": false,
+          "isPrimaryName": false,
+          "isMatchKey": false,
+          "isLookup": false,
+          "isPolymorphic": false,
+          "isCustom": true
+        },
+        {
+          "name": "contoso_formid",
+          "sqlType": "NVARCHAR(100)",
+          "dataverseType": "String",
+          "isPrimaryId": false,
+          "isPrimaryName": false,
+          "isMatchKey": false,
+          "isLookup": false,
+          "isPolymorphic": false,
+          "isCustom": true
+        },
+        {
+          "name": "contoso_legacyid",
+          "sqlType": "NVARCHAR(100)",
+          "dataverseType": "String",
+          "isPrimaryId": false,
+          "isPrimaryName": false,
+          "isMatchKey": true,
+          "isLookup": false,
+          "isPolymorphic": false,
+          "isCustom": true
+        }
+      ]
+    },
+    {
+      "logicalName": "contoso_court",
+      "schemaName": "contoso_Court",
+      "displayName": "Court",
+      "prefix": "jn",
+      "tier": 0,
+      "tierPart": 1,
+      "tierTotalParts": 1,
+      "fileNumber": 1,
+      "stagingFile": "01_create_staging.sql",
+      "guidFile": "01_create_guid.sql",
+      "stagingTable": "[dbo].[stage_contoso_Court]",
+      "guidTable": "[dbo].[guid_contoso_Court]",
+      "primaryIdAttribute": "contoso_courtid",
+      "primaryNameAttribute": "contoso_name",
+      "isCycleMember": false,
+      "matchKeys": [],
+      "dependencies": [],
+      "externalDependencies": [],
+      "droppedDependencies": [],
+      "columns": [
+        {
+          "name": "contoso_courtid",
+          "sqlType": "NVARCHAR(100)",
+          "dataverseType": "Uniqueidentifier",
+          "isPrimaryId": true,
+          "isPrimaryName": false,
+          "isMatchKey": false,
+          "isLookup": false,
+          "isPolymorphic": false,
+          "isCustom": true
+        },
+        {
+          "name": "contoso_name",
+          "sqlType": "NVARCHAR(100)",
+          "dataverseType": "String",
+          "isPrimaryId": false,
+          "isPrimaryName": false,
+          "isMatchKey": false,
+          "isLookup": false,
+          "isPolymorphic": false,
+          "isCustom": true
+        }
+      ]
+    },
+    {
+      "logicalName": "contoso_case",
+      "schemaName": "contoso_Case",
+      "displayName": "Case",
+      "prefix": "jn",
+      "tier": 1,
+      "tierPart": 1,
+      "tierTotalParts": 1,
+      "fileNumber": 2,
+      "stagingFile": "02_create_staging.sql",
+      "guidFile": "02_create_guid.sql",
+      "stagingTable": "[dbo].[stage_contoso_Case]",
+      "guidTable": "[dbo].[guid_contoso_Case]",
+      "primaryIdAttribute": "contoso_caseid",
+      "primaryNameAttribute": "contoso_name",
+      "isCycleMember": true,
+      "matchKeys": [
+        "contoso_legacyid"
+      ],
+      "dependencies": [
+        "contoso_category",
+        "contoso_court",
+        "contoso_incident"
+      ],
+      "externalDependencies": [],
+      "droppedDependencies": [
+        "contoso_incident"
+      ],
+      "columns": [
+        {
+          "name": "contoso_bailamount",
+          "sqlType": "NVARCHAR(100)",
+          "dataverseType": "Money",
+          "isPrimaryId": false,
+          "isPrimaryName": false,
+          "isMatchKey": false,
+          "isLookup": false,
+          "isPolymorphic": false,
+          "isCustom": true
+        },
+        {
+          "name": "contoso_bailamount_base",
+          "sqlType": "NVARCHAR(100)",
+          "dataverseType": "Money",
+          "isPrimaryId": false,
+          "isPrimaryName": false,
+          "isMatchKey": false,
+          "isLookup": false,
+          "isPolymorphic": false,
+          "isCustom": true
+        },
+        {
+          "name": "contoso_caseid",
+          "sqlType": "NVARCHAR(100)",
+          "dataverseType": "Uniqueidentifier",
+          "isPrimaryId": true,
+          "isPrimaryName": false,
+          "isMatchKey": false,
+          "isLookup": false,
+          "isPolymorphic": false,
+          "isCustom": true
+        },
+        {
+          "name": "contoso_categoryid",
+          "sqlType": "NVARCHAR(100)",
+          "dataverseType": "Lookup",
+          "isPrimaryId": false,
+          "isPrimaryName": false,
+          "isMatchKey": false,
+          "isLookup": true,
+          "isPolymorphic": false,
+          "isCustom": true,
+          "targets": [
+            "contoso_category"
+          ],
+          "targetsInScope": [
+            "contoso_category"
+          ],
+          "requiresDeferredUpdate": false
+        },
+        {
+          "name": "contoso_courtid",
+          "sqlType": "NVARCHAR(100)",
+          "dataverseType": "Lookup",
+          "isPrimaryId": false,
+          "isPrimaryName": false,
+          "isMatchKey": false,
+          "isLookup": true,
+          "isPolymorphic": false,
+          "isCustom": true,
+          "targets": [
+            "contoso_court"
+          ],
+          "targetsInScope": [
+            "contoso_court"
+          ],
+          "requiresDeferredUpdate": false
+        },
+        {
+          "name": "contoso_filedon",
+          "sqlType": "DATE",
+          "dataverseType": "DateTime",
+          "isPrimaryId": false,
+          "isPrimaryName": false,
+          "isMatchKey": false,
+          "isLookup": false,
+          "isPolymorphic": false,
+          "isCustom": true
+        },
+        {
+          "name": "contoso_incidentid",
+          "sqlType": "NVARCHAR(100)",
+          "dataverseType": "Lookup",
+          "isPrimaryId": false,
+          "isPrimaryName": false,
+          "isMatchKey": false,
+          "isLookup": true,
+          "isPolymorphic": true,
+          "isCustom": true,
+          "targets": [
+            "contoso_incident",
+            "contoso_court"
+          ],
+          "targetsInScope": [
+            "contoso_incident",
+            "contoso_court"
+          ],
+          "requiresDeferredUpdate": true
+        },
+        {
+          "name": "contoso_incidentidtype",
+          "sqlType": "NVARCHAR(100)",
+          "dataverseType": "EntityName",
+          "isLookup": false,
+          "isPolymorphic": false,
+          "isTypeCompanion": true,
+          "targets": [],
+          "targetsInScope": [],
+          "requiresDeferredUpdate": false
+        },
+        {
+          "name": "contoso_legacyid",
+          "sqlType": "NVARCHAR(100)",
+          "dataverseType": "String",
+          "isPrimaryId": false,
+          "isPrimaryName": false,
+          "isMatchKey": true,
+          "isLookup": false,
+          "isPolymorphic": false,
+          "isCustom": true
+        },
+        {
+          "name": "contoso_name",
+          "sqlType": "NVARCHAR(200)",
+          "dataverseType": "String",
+          "isPrimaryId": false,
+          "isPrimaryName": false,
+          "isMatchKey": false,
+          "isLookup": false,
+          "isPolymorphic": false,
+          "isCustom": true
+        },
+        {
+          "name": "contoso_priority",
+          "sqlType": "NVARCHAR(100)",
+          "dataverseType": "Picklist",
+          "isPrimaryId": false,
+          "isPrimaryName": false,
+          "isMatchKey": false,
+          "isLookup": false,
+          "isPolymorphic": false,
+          "isCustom": true
+        },
+        {
+          "name": "contoso_sealed",
+          "sqlType": "BIT",
+          "dataverseType": "Boolean",
+          "isPrimaryId": false,
+          "isPrimaryName": false,
+          "isMatchKey": false,
+          "isLookup": false,
+          "isPolymorphic": false,
+          "isCustom": true
+        }
+      ]
+    },
+    {
+      "logicalName": "contoso_incident",
+      "schemaName": "contoso_Incident",
+      "displayName": "Incident",
+      "prefix": "jn",
+      "tier": 2,
+      "tierPart": 1,
+      "tierTotalParts": 1,
+      "fileNumber": 3,
+      "stagingFile": "03_create_staging.sql",
+      "guidFile": "03_create_guid.sql",
+      "stagingTable": "[dbo].[stage_contoso_Incident]",
+      "guidTable": "[dbo].[guid_contoso_Incident]",
+      "primaryIdAttribute": "contoso_incidentid",
+      "primaryNameAttribute": "contoso_name",
+      "isCycleMember": false,
+      "matchKeys": [
+        "contoso_legacyid"
+      ],
+      "dependencies": [
+        "contoso_case"
+      ],
+      "externalDependencies": [],
+      "droppedDependencies": [],
+      "columns": [
+        {
+          "name": "contoso_caseid",
+          "sqlType": "NVARCHAR(100)",
+          "dataverseType": "Lookup",
+          "isPrimaryId": false,
+          "isPrimaryName": false,
+          "isMatchKey": false,
+          "isLookup": true,
+          "isPolymorphic": false,
+          "isCustom": true,
+          "targets": [
+            "contoso_case"
+          ],
+          "targetsInScope": [
+            "contoso_case"
+          ],
+          "requiresDeferredUpdate": false
+        },
+        {
+          "name": "contoso_incidentid",
+          "sqlType": "NVARCHAR(100)",
+          "dataverseType": "Uniqueidentifier",
+          "isPrimaryId": true,
+          "isPrimaryName": false,
+          "isMatchKey": false,
+          "isLookup": false,
+          "isPolymorphic": false,
+          "isCustom": true
+        },
+        {
+          "name": "contoso_legacyid",
+          "sqlType": "NVARCHAR(100)",
+          "dataverseType": "String",
+          "isPrimaryId": false,
+          "isPrimaryName": false,
+          "isMatchKey": true,
+          "isLookup": false,
+          "isPolymorphic": false,
+          "isCustom": true
+        },
+        {
+          "name": "contoso_name",
+          "sqlType": "NVARCHAR(100)",
+          "dataverseType": "String",
+          "isPrimaryId": false,
+          "isPrimaryName": false,
+          "isMatchKey": false,
+          "isLookup": false,
+          "isPolymorphic": false,
+          "isCustom": true
+        },
+        {
+          "name": "contoso_narrative",
+          "sqlType": "NVARCHAR(MAX)",
+          "dataverseType": "Memo",
+          "isPrimaryId": false,
+          "isPrimaryName": false,
+          "isMatchKey": false,
+          "isLookup": false,
+          "isPolymorphic": false,
+          "isCustom": true
+        }
+      ]
+    }
+  ],
+  "cycles": [
+    {
+      "table": "contoso_case",
+      "droppedTargets": [
+        "contoso_incident"
+      ]
+    }
+  ],
+  "warnings": [
+    "Cycle: [contoso_case] placed before its lookup target(s) [contoso_incident] - resolve those lookups with a deferred update pass.",
+    "No match-key column (legacyid) on 1 table(s): contoso_court"
+  ]
+}

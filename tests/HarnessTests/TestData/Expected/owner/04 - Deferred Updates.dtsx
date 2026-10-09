@@ -1,0 +1,353 @@
+<?xml version="1.0" encoding="utf-8"?><DTS:Executable xmlns:DTS="www.microsoft.com/SqlServer/Dts" DTS:refId="Package" DTS:CreationDate="1/14/2026 9:46:58 PM" DTS:CreationName="Microsoft.Package" DTS:CreatorComputerName="EXAMPLE-SQL" DTS:CreatorName="EXAMPLE\user" DTS:DTSID="{27E61342-BBA0-52FC-A3BE-71C9F0341CA0}" DTS:ExecutableType="Microsoft.Package" DTS:LastModifiedProductVersion="17.0.1010.2" DTS:LocaleID="1033" DTS:ObjectName="04 - Deferred Updates" DTS:PackageType="5" DTS:VersionBuild="327" DTS:VersionGUID="{56262D16-A4F9-56B1-856C-FCBA15EAF1CC}">
+  <DTS:Property DTS:Name="PackageFormatVersion">8</DTS:Property>
+  
+  
+  
+  
+<DTS:Executables><DTS:Executable DTS:refId="Package\Update Case Lookups" DTS:CreationName="Microsoft.Pipeline" DTS:Description="Data Flow Task" DTS:DTSID="{35162CF8-2134-55C9-B07C-08F0BBE17845}" DTS:ExecutableType="Microsoft.Pipeline" DTS:LocaleID="-1" DTS:ObjectName="Update Case Lookups" DTS:TaskContact="Performs high-performance data extraction, transformation and loading;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved;http://www.microsoft.com/sql/support/default.asp;1">
+      <DTS:Variables/>
+      <DTS:ObjectData>
+        <pipeline version="1">
+          <components>
+            <component refId="Package\Update Case Lookups\Conditional Split" componentClassID="Microsoft.ConditionalSplit" contactInfo="Conditional Split;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;0" description="Routes data rows to different outputs depending on the content of the data. Use conditions (SSIS expressions) to specify which rows are routed. For example, separate records that need to be cleaned from those that are ready to be loaded or route only a subset of records." name="Conditional Split" usesDispositions="true">
+              <inputs>
+                <input refId="Package\Update Case Lookups\Conditional Split.Inputs[Conditional Split Input]" description="Input to the Conditional Split Transformation" name="Conditional Split Input">
+                  <inputColumns>
+                    <inputColumn refId="Package\Update Case Lookups\Conditional Split.Inputs[Conditional Split Input].Columns[contoso_caseid]" cachedName="contoso_caseid" lineageId="Package\Update Case Lookups\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_caseid]" cachedDataType="wstr" cachedLength="100"/>
+                  </inputColumns>
+                  <externalMetadataColumns/>
+                </input>
+              </inputs>
+              <outputs>
+                <output refId="Package\Update Case Lookups\Conditional Split.Outputs[Create]" description="Output 3 of the Conditional Split Transformation" errorOrTruncationOperation="Computation" errorRowDisposition="FailComponent" exclusionGroup="1" name="Create" synchronousInputId="Package\Update Case Lookups\Conditional Split.Inputs[Conditional Split Input]" truncationRowDisposition="FailComponent">
+                  <properties>
+                    <property containsID="true" dataType="System.String" description="Specifies the expression. This expression version uses lineage identifiers instead of column names." name="Expression">[ISNULL](#{Package\Update Case Lookups\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_caseid]})</property>
+                    <property containsID="true" dataType="System.String" description="Specifies the friendly version of the expression. This expression version uses column names." expressionType="Notify" name="FriendlyExpression">ISNULL(contoso_caseid)</property>
+                    <property dataType="System.Int32" description="Specifies the position of the condition in the list of conditions that the transformation evaluates. The evaluation order is from the lowest to the highest value." name="EvaluationOrder">0</property>
+                  </properties>
+                  <externalMetadataColumns/>
+                </output>
+                <output refId="Package\Update Case Lookups\Conditional Split.Outputs[Update]" description="Default Output of the Conditional Split Transformation" exclusionGroup="1" name="Update" synchronousInputId="Package\Update Case Lookups\Conditional Split.Inputs[Conditional Split Input]">
+                  <properties>
+                    <property dataType="System.Boolean" name="IsDefaultOut">true</property>
+                  </properties>
+                  <externalMetadataColumns/>
+                </output>
+                <output refId="Package\Update Case Lookups\Conditional Split.Outputs[Conditional Split Error Output]" description="Error Output of the Conditional Split Transformation" exclusionGroup="1" isErrorOut="true" name="Conditional Split Error Output" synchronousInputId="Package\Update Case Lookups\Conditional Split.Inputs[Conditional Split Input]">
+                  <outputColumns>
+                    <outputColumn refId="Package\Update Case Lookups\Conditional Split.Outputs[Conditional Split Error Output].Columns[ErrorCode]" dataType="i4" lineageId="Package\Update Case Lookups\Conditional Split.Outputs[Conditional Split Error Output].Columns[ErrorCode]" name="ErrorCode" specialFlags="1"/>
+                    <outputColumn refId="Package\Update Case Lookups\Conditional Split.Outputs[Conditional Split Error Output].Columns[ErrorColumn]" dataType="i4" lineageId="Package\Update Case Lookups\Conditional Split.Outputs[Conditional Split Error Output].Columns[ErrorColumn]" name="ErrorColumn" specialFlags="2"/>
+                  </outputColumns>
+                  <externalMetadataColumns/>
+                </output>
+              </outputs>
+            </component>
+            
+            <component refId="Package\Update Case Lookups\Dynamics CRM Destination - Update" componentClassID="Microsoft.ManagedComponentHost" contactInfo="KingswaySoft Inc.; http://www.kingswaysoft.com; support@kingswaysoft.com; Copyright (c) 2011-2025 KingswaySoft Inc." description="Populate data into Microsoft Dynamics 365 CE/CRM." name="Dynamics CRM Destination - Update" usesDispositions="true" version="4">
+              <properties>
+                <property dataType="System.String" description="Destination entity to write data." expressionType="Notify" name="DestinationEntity">contoso_case</property>
+                <property dataType="System.Int32" description="Specifies how data is written to CDS/Dynamics CRM server." name="ActionType" typeConverter="KingswaySoft.IntegrationToolkit.DynamicsCrm.DestinationActionType">3</property>
+                <property dataType="System.Boolean" description="Specifies whether the values of CDS/CRM lookup fields should be removed if the reference records cannot be found. " expressionType="Notify" name="RemoveUnresolvableReferences">false</property>
+                <property dataType="System.Boolean" description="Specifies whether duplicate detection should be enabled when creating or updating CDS/CRM records. Duplicate records are determined by the duplicate detection rules and settings defined in CDS or Microsoft Dynamics CRM server." expressionType="Notify" name="EnableSystemDuplicateDetection">false</property>
+                <property dataType="System.Int32" description="Specify the matching criteria to be used when performing an update or upsert. " expressionType="Notify" name="RecordMatchingCriteria" typeConverter="KingswaySoft.IntegrationToolkit.Common.DescriptiveEnumTypeConverter`1[[KingswaySoft.IntegrationToolkit.DynamicsCrm.RecordMatchingCriteria">1</property>
+                <property dataType="System.String" description="Specify the key fields to be used to determine the matching records that exist in CDS/CRM for either Upsert/Update action or source duplicate optimization." expressionType="Notify" name="RecordMatchingKeyFields"/>
+                <property dataType="System.Boolean" description="Specifies whether to ignore those NULL-valued fields." expressionType="Notify" name="IgnoreNullValuedFields">false</property>
+                <property dataType="System.Boolean" description="Specifies whether to ignore those fields that have no value changes in the target system. " expressionType="Notify" name="IgnoreUnchangedFields">false</property>
+                <property dataType="System.Boolean" description="Specify whether to remove those invalid characters before writing to CDS/CRM." expressionType="Notify" name="RemoveInvalidCharacters">false</property>
+                <property dataType="System.String" description="Specify the flag field(s) that are used to track the source of changes. The field(s) will not posted to CDS/CRM server unless there are changes to other fields if specified. &quot;Ignore Unchange Fields&quot; option is required in order for the specified flag field(s) to work. " expressionType="Notify" name="ChangeFlagFields"/>
+                <property dataType="System.Int32" description="Specifies what action will be taken when multiple matches are found with Upsert action." expressionType="Notify" name="HandlingOfMultipleMatches" typeConverter="KingswaySoft.IntegrationToolkit.Common.DescriptiveEnumTypeConverter`1[[KingswaySoft.IntegrationToolkit.DynamicsCrm.HandlingOfMultipleMatches">0</property>
+                <property dataType="System.Int32" description="Specify whether to use optimizations when there are duplicate records form the source system." expressionType="Notify" name="OptimizationOnSourceDuplicates" typeConverter="KingswaySoft.IntegrationToolkit.Common.DescriptiveEnumTypeConverter`1[[KingswaySoft.IntegrationToolkit.DynamicsCrm.OptimizationOnSourceDuplicates">0</property>
+                <property dataType="System.String" description="Workflow or action to be executed." expressionType="Notify" name="WorkflowAction"/>
+                <property dataType="System.Int32" description="Specifies the number of records to be sent to CDS/Dynamics CRM server in each service call." expressionType="Notify" name="BatchSize">100</property>
+                <property dataType="System.Int32" description="Specify the total number or concurrent threads to write to CDS/CRM server simultaneously. " expressionType="Notify" name="ConcurrentWritingThreadsInTotal">20</property>
+                <property dataType="System.Boolean" description="Specifies whether datetime values should be sent to CDS/CRM server in UTC format." expressionType="Notify" name="SendDateTimeInUtcFormat">true</property>
+                <property dataType="System.String" description="Specify whether to bypass synchronous logic, asynchronous logic or, both during writing. " expressionType="Notify" name="BypassBusinessLogicExecution"/>
+                <property dataType="System.String" description="Specify the registered plug-in steps that should be bypassed during runtime instead of all synchronous and asynchronous custom logic. " expressionType="Notify" name="BypassBusinessLogicExecutionStepIds"/>
+                <property dataType="System.String" name="UserComponentTypeName">KingswaySoft.IntegrationToolkit.DynamicsCrm.CrmDestinationComponent</property>
+                <property dataType="System.Boolean" description="Specify whether to use those homogeneous batch operation messages (such as CreateMultiple, UpdateMultiple, DeleteMultiple, etc.) for more efficient batch writing (if supported). " expressionType="Notify" name="UseHomogeneousBatchOperationMessages">true</property>
+                <property dataType="System.Boolean" description="Specify whether to leverage the platform feature to suppress callback registration expander jobs during the data load." expressionType="Notify" name="SuppressCallbackRegistrationExpanderJob">true</property>
+                <property dataType="System.Boolean" description="Specify whether to tentatively disable relevant plugins" expressionType="Notify" name="TentativelyDisableRelevantPlugins">true</property>
+                <property dataType="System.Boolean" description="Specify whether to tentatively disable relevant workflows" expressionType="Notify" name="TentativelyDisableRelevantWorkflows">true</property>
+                <property dataType="System.Boolean" description="Specify whethere to tentatively disable entity change tracking (auditing)" expressionType="Notify" name="TentativelyDisableEntityAuditing">true</property>
+              </properties>
+              <connections>
+                <connection refId="Package\Update Case Lookups\Dynamics CRM Destination - Update.Connections[DynamicsCRM]" connectionManagerID="{FDE9DA74-21D4-4CF4-B7E9-B279EEB3BA47}:external" connectionManagerRefId="Project.ConnectionManagers[Dynamics CRM Connection Manager]" description="Dynamics CRM Connection Manager" name="DynamicsCRM"/>
+              </connections>
+              <inputs>
+                <input refId="Package\Update Case Lookups\Dynamics CRM Destination - Update.Inputs[Input]" errorOrTruncationOperation="Insert" errorRowDisposition="RedirectRow" hasSideEffects="true" name="Input">
+                  <inputColumns>
+                    <inputColumn refId="Package\Update Case Lookups\Dynamics CRM Destination - Update.Inputs[Input].Columns[contoso_caseid]" cachedName="contoso_caseid" externalMetadataColumnId="Package\Update Case Lookups\Dynamics CRM Destination - Update.Inputs[Input].ExternalColumns[contoso_caseid]" lineageId="Package\Update Case Lookups\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_caseid]" cachedDataType="wstr" cachedLength="100"/>
+                    <inputColumn refId="Package\Update Case Lookups\Dynamics CRM Destination - Update.Inputs[Input].Columns[contoso_incidentid]" cachedName="contoso_incidentid" externalMetadataColumnId="Package\Update Case Lookups\Dynamics CRM Destination - Update.Inputs[Input].ExternalColumns[contoso_incidentid]" lineageId="Package\Update Case Lookups\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_incidentid]" cachedDataType="wstr" cachedLength="100"/>
+                    <inputColumn refId="Package\Update Case Lookups\Dynamics CRM Destination - Update.Inputs[Input].Columns[contoso_legacyid]" cachedName="contoso_legacyid" externalMetadataColumnId="Package\Update Case Lookups\Dynamics CRM Destination - Update.Inputs[Input].ExternalColumns[contoso_legacyid]" lineageId="Package\Update Case Lookups\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_legacyid]" cachedDataType="wstr" cachedLength="100"/>
+                  </inputColumns>
+                  <externalMetadataColumns isUsed="True">
+                    <externalMetadataColumn refId="Package\Update Case Lookups\Dynamics CRM Destination - Update.Inputs[Input].ExternalColumns[contoso_caseid]" name="contoso_caseid" dataType="guid">
+                      <properties>
+                        <property dataType="System.String" name="FieldType">Uniqueidentifier</property>
+                        <property dataType="System.String" name="LookupTypes"/>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn refId="Package\Update Case Lookups\Dynamics CRM Destination - Update.Inputs[Input].ExternalColumns[contoso_incidentid]" name="contoso_incidentid" dataType="guid">
+                      <properties>
+                        <property dataType="System.String" name="FieldType">Lookup</property>
+                        <property dataType="System.String" name="LookupTypes">contoso_incident</property>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn refId="Package\Update Case Lookups\Dynamics CRM Destination - Update.Inputs[Input].ExternalColumns[contoso_legacyid]" name="contoso_legacyid" dataType="wstr" length="100">
+                      <properties>
+                        <property dataType="System.String" name="FieldType">String</property>
+                        <property dataType="System.String" name="LookupTypes"/>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn refId="Package\Update Case Lookups\Dynamics CRM Destination - Update.Inputs[Input].ExternalColumns[modifiedby]" dataType="guid" name="modifiedby">
+                      <properties>
+                        <property dataType="System.String" name="FieldType">Lookup</property>
+                        <property dataType="System.String" name="LookupTypes">systemuser</property>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn refId="Package\Update Case Lookups\Dynamics CRM Destination - Update.Inputs[Input].ExternalColumns[statuscode]" dataType="i4" name="statuscode">
+                      <properties>
+                        <property dataType="System.String" name="FieldType">Status</property>
+                        <property dataType="System.String" name="LookupTypes"/>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn refId="Package\Update Case Lookups\Dynamics CRM Destination - Update.Inputs[Input].ExternalColumns[timezoneruleversionnumber]" dataType="i4" name="timezoneruleversionnumber">
+                      <properties>
+                        <property dataType="System.String" name="FieldType">Integer</property>
+                        <property dataType="System.String" name="LookupTypes"/>
+                      </properties>
+                    </externalMetadataColumn>
+                    <externalMetadataColumn refId="Package\Update Case Lookups\Dynamics CRM Destination - Update.Inputs[Input].ExternalColumns[utcconversiontimezonecode]" dataType="i4" name="utcconversiontimezonecode">
+                      <properties>
+                        <property dataType="System.String" name="FieldType">Integer</property>
+                        <property dataType="System.String" name="LookupTypes"/>
+                      </properties>
+                    </externalMetadataColumn>
+                  </externalMetadataColumns>
+                </input>
+              </inputs>
+              <outputs>
+                <output refId="Package\Update Case Lookups\Dynamics CRM Destination - Update.Outputs[Default Output]" exclusionGroup="1" name="Default Output" synchronousInputId="Package\Update Case Lookups\Dynamics CRM Destination - Update.Inputs[Input]">
+                  <outputColumns>
+                    <outputColumn refId="Package\Update Case Lookups\Dynamics CRM Destination - Update.Outputs[Default Output].Columns[SavedRecordId]" dataType="guid" lineageId="Package\Update Case Lookups\Dynamics CRM Destination - Update.Outputs[Default Output].Columns[SavedRecordId]" name="SavedRecordId"/>
+                    <outputColumn refId="Package\Update Case Lookups\Dynamics CRM Destination - Update.Outputs[Default Output].Columns[IsNew]" dataType="bool" lineageId="Package\Update Case Lookups\Dynamics CRM Destination - Update.Outputs[Default Output].Columns[IsNew]" name="IsNew"/>
+                  </outputColumns>
+                  <externalMetadataColumns isUsed="True"/>
+                </output>
+                <output refId="Package\Update Case Lookups\Dynamics CRM Destination - Update.Outputs[Error Output]" exclusionGroup="1" isErrorOut="true" name="Error Output" synchronousInputId="Package\Update Case Lookups\Dynamics CRM Destination - Update.Inputs[Input]">
+                  <outputColumns>
+                    <outputColumn refId="Package\Update Case Lookups\Dynamics CRM Destination - Update.Outputs[Error Output].Columns[ErrorCode]" dataType="i4" lineageId="Package\Update Case Lookups\Dynamics CRM Destination - Update.Outputs[Error Output].Columns[ErrorCode]" name="ErrorCode" specialFlags="1"/>
+                    <outputColumn refId="Package\Update Case Lookups\Dynamics CRM Destination - Update.Outputs[Error Output].Columns[ErrorColumn]" dataType="i4" lineageId="Package\Update Case Lookups\Dynamics CRM Destination - Update.Outputs[Error Output].Columns[ErrorColumn]" name="ErrorColumn" specialFlags="2"/>
+                    <outputColumn refId="Package\Update Case Lookups\Dynamics CRM Destination - Update.Outputs[Error Output].Columns[ErrorMessage]" dataType="wstr" length="2048" lineageId="Package\Update Case Lookups\Dynamics CRM Destination - Update.Outputs[Error Output].Columns[ErrorMessage]" name="ErrorMessage"/>
+                  </outputColumns>
+                  <externalMetadataColumns/>
+                </output>
+              </outputs>
+            </component>
+            
+            <component refId="Package\Update Case Lookups\OLE DB Destination - Error Table 1" componentClassID="Microsoft.OLEDBDestination" contactInfo="OLE DB Destination;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;4" description="OLE DB Destination" name="OLE DB Destination - Error Table 1" usesDispositions="true" version="4">
+              <properties>
+                <property dataType="System.Int32" description="The number of seconds before a command times out.  A value of 0 indicates an infinite time-out." name="CommandTimeout">0</property>
+                <property dataType="System.String" description="Specifies the name of the database object used to open a rowset." name="OpenRowset">[dbo].[Error]</property>
+                <property dataType="System.String" description="Specifies the variable that contains the name of the database object used to open a rowset." name="OpenRowsetVariable"/>
+                <property dataType="System.String" description="The SQL command to be executed." name="SqlCommand" UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor, Microsoft.DataTransformationServices.Controls, Version=17.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91"/>
+                <property dataType="System.Int32" description="Specifies the column code page to use when code page information is unavailable from the data source." name="DefaultCodePage">1252</property>
+                <property dataType="System.Boolean" description="Forces the use of the DefaultCodePage property value when describing character data." name="AlwaysUseDefaultCodePage">false</property>
+                <property dataType="System.Int32" description="Specifies the mode used to access the database." name="AccessMode" typeConverter="AccessMode">0</property>
+                <property dataType="System.Boolean" description="Indicates whether the values supplied for identity columns will be copied to the destination. If false, values for identity columns will be auto-generated at the destination. Applies only if fast load is turned on." name="FastLoadKeepIdentity">false</property>
+                <property dataType="System.Boolean" description="Indicates whether the columns containing null will have null inserted in the destination. If false, columns containing null will have their default values inserted at the destination. Applies only if fast load is turned on." name="FastLoadKeepNulls">false</property>
+                <property dataType="System.String" description="Specifies options to be used with fast load.  Applies only if fast load is turned on." name="FastLoadOptions"/>
+                <property dataType="System.Int32" description="Specifies when commits are issued during data insertion.  A value of 0 specifies that one commit will be issued at the end of data insertion.  Applies only if fast load is turned on." name="FastLoadMaxInsertCommitSize">2147483647</property>
+              </properties>
+              <connections>
+                <connection refId="Package\Update Case Lookups\OLE DB Destination - Error Table 1.Connections[OleDbConnection]" connectionManagerID="{B8417766-EC9D-4BA9-B311-D190769147F3}:external" connectionManagerRefId="Project.ConnectionManagers[Staging]" description="The OLE DB runtime connection used to access the database." name="OleDbConnection"/>
+              </connections>
+              <inputs>
+                <input refId="Package\Update Case Lookups\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input]" errorOrTruncationOperation="Insert" errorRowDisposition="FailComponent" hasSideEffects="true" name="OLE DB Destination Input">
+                  <inputColumns>
+                    <inputColumn refId="Package\Update Case Lookups\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].Columns[ErrorCode]" cachedDataType="i4" cachedName="ErrorCode" externalMetadataColumnId="Package\Update Case Lookups\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[ErrorCode]" lineageId="Package\Update Case Lookups\Dynamics CRM Destination - Update.Outputs[Error Output].Columns[ErrorCode]"/>
+                    <inputColumn refId="Package\Update Case Lookups\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].Columns[ErrorMessage]" cachedDataType="wstr" cachedLength="2048" cachedName="ErrorMessage" externalMetadataColumnId="Package\Update Case Lookups\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[ErrorMessage]" lineageId="Package\Update Case Lookups\Dynamics CRM Destination - Update.Outputs[Error Output].Columns[ErrorMessage]"/>
+                  </inputColumns>
+                  <externalMetadataColumns isUsed="True">
+                    <externalMetadataColumn refId="Package\Update Case Lookups\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[ErrorTimeUtc]" dataType="dbTimeStamp2" name="ErrorTimeUtc" scale="7"/>
+                    <externalMetadataColumn refId="Package\Update Case Lookups\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[ErrorCode]" codePage="1252" dataType="str" length="100" name="ErrorCode"/>
+                    <externalMetadataColumn refId="Package\Update Case Lookups\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[ErrorMessage]" dataType="nText" name="ErrorMessage"/>
+                  </externalMetadataColumns>
+                </input>
+              </inputs>
+              <outputs>
+                <output refId="Package\Update Case Lookups\OLE DB Destination - Error Table 1.Outputs[OLE DB Destination Error Output]" exclusionGroup="1" isErrorOut="true" name="OLE DB Destination Error Output" synchronousInputId="Package\Update Case Lookups\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input]">
+                  <outputColumns>
+                    <outputColumn refId="Package\Update Case Lookups\OLE DB Destination - Error Table 1.Outputs[OLE DB Destination Error Output].Columns[ErrorCode]" dataType="i4" lineageId="Package\Update Case Lookups\OLE DB Destination - Error Table 1.Outputs[OLE DB Destination Error Output].Columns[ErrorCode]" name="ErrorCode" specialFlags="1"/>
+                    <outputColumn refId="Package\Update Case Lookups\OLE DB Destination - Error Table 1.Outputs[OLE DB Destination Error Output].Columns[ErrorColumn]" dataType="i4" lineageId="Package\Update Case Lookups\OLE DB Destination - Error Table 1.Outputs[OLE DB Destination Error Output].Columns[ErrorColumn]" name="ErrorColumn" specialFlags="2"/>
+                  </outputColumns>
+                  <externalMetadataColumns/>
+                </output>
+              </outputs>
+            </component>
+            
+            <component refId="Package\Update Case Lookups\OLE DB Source - Staging" componentClassID="Microsoft.OLEDBSource" contactInfo="OLE DB Source;Microsoft Corporation; Microsoft SQL Server; (C) Microsoft Corporation; All Rights Reserved; http://www.microsoft.com/sql/support;7" description="OLE DB Source" name="OLE DB Source - Staging" usesDispositions="true" version="7">
+              <properties>
+                <property dataType="System.Int32" description="The number of seconds before a command times out.  A value of 0 indicates an infinite time-out." name="CommandTimeout">0</property>
+                <property dataType="System.String" description="Specifies the name of the database object used to open a rowset." name="OpenRowset">[dbo].[stage_contoso_Case]</property>
+                <property dataType="System.String" description="Specifies the variable that contains the name of the database object used to open a rowset." name="OpenRowsetVariable"/>
+                <property dataType="System.String" description="The SQL command to be executed." name="SqlCommand" UITypeEditor="Microsoft.DataTransformationServices.Controls.ModalMultilineStringEditor, Microsoft.DataTransformationServices.Controls, Version=17.0.0.0, Culture=neutral, PublicKeyToken=89845dcd8080cc91">SELECT
+    CAST(g.[contoso_caseid] AS NVARCHAR(100)) AS [contoso_caseid],
+    CAST(lk1.[contoso_incidentid] AS NVARCHAR(100)) AS [contoso_incidentid],
+    s.[contoso_legacyid]
+FROM [dbo].[stage_contoso_Case] s
+INNER JOIN [dbo].[guid_contoso_Case] g ON g.[contoso_legacyid] = s.[contoso_legacyid]
+INNER JOIN [Legacy].[dbo].[Case] m ON m.[legacyid] = s.[contoso_legacyid]
+LEFT JOIN [dbo].[guid_contoso_Incident] AS lk1 ON lk1.[contoso_legacyid] = m.[incidentid]
+WHERE g.[contoso_caseid] IS NOT NULL</property>
+                <property dataType="System.String" description="The variable that contains the SQL command to be executed." name="SqlCommandVariable"/>
+                <property dataType="System.Int32" description="Specifies the column code page to use when code page information is unavailable from the data source." name="DefaultCodePage">1252</property>
+                <property dataType="System.Boolean" description="Forces the use of the DefaultCodePage property value when describing character data." name="AlwaysUseDefaultCodePage">false</property>
+                <property dataType="System.Int32" description="Specifies the mode used to access the database." name="AccessMode" typeConverter="AccessMode">2</property>
+                <property dataType="System.String" description="The mappings between the parameters in the SQL command and variables." name="ParameterMapping"/>
+              </properties>
+              <connections>
+                <connection refId="Package\Update Case Lookups\OLE DB Source - Staging.Connections[OleDbConnection]" connectionManagerID="{B8417766-EC9D-4BA9-B311-D190769147F3}:external" connectionManagerRefId="Project.ConnectionManagers[Staging]" description="The OLE DB runtime connection used to access the database." name="OleDbConnection"/>
+              </connections>
+              <outputs>
+                <output refId="Package\Update Case Lookups\OLE DB Source - Staging.Outputs[OLE DB Source Output]" name="OLE DB Source Output">
+                  <outputColumns>
+                    <outputColumn refId="Package\Update Case Lookups\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_caseid]" errorOrTruncationOperation="Conversion" errorRowDisposition="FailComponent" externalMetadataColumnId="Package\Update Case Lookups\OLE DB Source - Staging.Outputs[OLE DB Source Output].ExternalColumns[contoso_caseid]" lineageId="Package\Update Case Lookups\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_caseid]" name="contoso_caseid" truncationRowDisposition="FailComponent" dataType="wstr" length="100"/>
+                    <outputColumn refId="Package\Update Case Lookups\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_incidentid]" errorOrTruncationOperation="Conversion" errorRowDisposition="FailComponent" externalMetadataColumnId="Package\Update Case Lookups\OLE DB Source - Staging.Outputs[OLE DB Source Output].ExternalColumns[contoso_incidentid]" lineageId="Package\Update Case Lookups\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_incidentid]" name="contoso_incidentid" truncationRowDisposition="FailComponent" dataType="wstr" length="100"/>
+                    <outputColumn refId="Package\Update Case Lookups\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_legacyid]" errorOrTruncationOperation="Conversion" errorRowDisposition="FailComponent" externalMetadataColumnId="Package\Update Case Lookups\OLE DB Source - Staging.Outputs[OLE DB Source Output].ExternalColumns[contoso_legacyid]" lineageId="Package\Update Case Lookups\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_legacyid]" name="contoso_legacyid" truncationRowDisposition="FailComponent" dataType="wstr" length="100"/>
+                  </outputColumns>
+                  <externalMetadataColumns isUsed="True">
+                    <externalMetadataColumn refId="Package\Update Case Lookups\OLE DB Source - Staging.Outputs[OLE DB Source Output].ExternalColumns[contoso_caseid]" name="contoso_caseid" dataType="wstr" length="100"/>
+                    <externalMetadataColumn refId="Package\Update Case Lookups\OLE DB Source - Staging.Outputs[OLE DB Source Output].ExternalColumns[contoso_incidentid]" name="contoso_incidentid" dataType="wstr" length="100"/>
+                    <externalMetadataColumn refId="Package\Update Case Lookups\OLE DB Source - Staging.Outputs[OLE DB Source Output].ExternalColumns[contoso_legacyid]" name="contoso_legacyid" dataType="wstr" length="100"/>
+                  </externalMetadataColumns>
+                </output>
+                <output refId="Package\Update Case Lookups\OLE DB Source - Staging.Outputs[OLE DB Source Error Output]" isErrorOut="true" name="OLE DB Source Error Output">
+                  <outputColumns>
+                    <outputColumn refId="Package\Update Case Lookups\OLE DB Source - Staging.Outputs[OLE DB Source Error Output].Columns[contoso_caseid]" lineageId="Package\Update Case Lookups\OLE DB Source - Staging.Outputs[OLE DB Source Error Output].Columns[contoso_caseid]" name="contoso_caseid" dataType="wstr" length="100"/>
+                    <outputColumn refId="Package\Update Case Lookups\OLE DB Source - Staging.Outputs[OLE DB Source Error Output].Columns[contoso_incidentid]" lineageId="Package\Update Case Lookups\OLE DB Source - Staging.Outputs[OLE DB Source Error Output].Columns[contoso_incidentid]" name="contoso_incidentid" dataType="wstr" length="100"/>
+                    <outputColumn refId="Package\Update Case Lookups\OLE DB Source - Staging.Outputs[OLE DB Source Error Output].Columns[contoso_legacyid]" lineageId="Package\Update Case Lookups\OLE DB Source - Staging.Outputs[OLE DB Source Error Output].Columns[contoso_legacyid]" name="contoso_legacyid" dataType="wstr" length="100"/>
+                    <outputColumn refId="Package\Update Case Lookups\OLE DB Source - Staging.Outputs[OLE DB Source Error Output].Columns[ErrorCode]" dataType="i4" lineageId="Package\Update Case Lookups\OLE DB Source - Staging.Outputs[OLE DB Source Error Output].Columns[ErrorCode]" name="ErrorCode" specialFlags="1"/>
+                    <outputColumn refId="Package\Update Case Lookups\OLE DB Source - Staging.Outputs[OLE DB Source Error Output].Columns[ErrorColumn]" dataType="i4" lineageId="Package\Update Case Lookups\OLE DB Source - Staging.Outputs[OLE DB Source Error Output].Columns[ErrorColumn]" name="ErrorColumn" specialFlags="2"/>
+                  </outputColumns>
+                  <externalMetadataColumns/>
+                </output>
+              </outputs>
+            </component>
+          </components>
+          <paths>
+            
+            
+            
+            <path refId="Package\Update Case Lookups.Paths[Error Output1]" endId="Package\Update Case Lookups\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input]" name="Error Output" startId="Package\Update Case Lookups\Dynamics CRM Destination - Update.Outputs[Error Output]"/>
+            <path refId="Package\Update Case Lookups.Paths[OLE DB Source Output]" endId="Package\Update Case Lookups\Conditional Split.Inputs[Conditional Split Input]" name="OLE DB Source Output" startId="Package\Update Case Lookups\OLE DB Source - Staging.Outputs[OLE DB Source Output]"/>
+            <path refId="Package\Update Case Lookups.Paths[Update]" endId="Package\Update Case Lookups\Dynamics CRM Destination - Update.Inputs[Input]" name="Update" startId="Package\Update Case Lookups\Conditional Split.Outputs[Update]"/>
+          </paths>
+        </pipeline>
+      </DTS:ObjectData>
+    </DTS:Executable></DTS:Executables><DTS:DesignTimeProperties><![CDATA[<Objects Version="8"><Package design-time-name="Package"><LayoutInfo><GraphLayout xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" Capacity="4"><NodeLayout Size="212,42" Id="Package\Update Case Lookups" TopLeft="40,30"/></GraphLayout></LayoutInfo></Package><TaskHost design-time-name="Package\Migrate Case">
+    <LayoutInfo>
+      <GraphLayout xmlns="clr-namespace:Microsoft.SqlServer.IntegrationServices.Designer.Model.Serialization;assembly=Microsoft.SqlServer.IntegrationServices.Graph" xmlns:mssgle="clr-namespace:Microsoft.SqlServer.Graph.LayoutEngine;assembly=Microsoft.SqlServer.Graph" xmlns:assembly="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:mssgm="clr-namespace:Microsoft.SqlServer.Graph.Model;assembly=Microsoft.SqlServer.Graph" Capacity="16">
+        
+        
+        <NodeLayout Size="204,42" Id="Package\Update Case Lookups\OLE DB Source - Staging" TopLeft="384.5,5.49999999999989"/>
+        
+        <NodeLayout Size="251,42" Id="Package\Update Case Lookups\OLE DB Destination - Error Table 1" TopLeft="312,312.5"/>
+        <NodeLayout Size="159,42" Id="Package\Update Case Lookups\Conditional Split" TopLeft="407,107.5"/>
+        <NodeLayout Size="258,42" Id="Package\Update Case Lookups\Dynamics CRM Destination - Update" TopLeft="39.5,209.5"/>
+        <EdgeLayout Id="Package\Update Case Lookups.Paths[Update]" TopLeft="461.333333333333,149.5">
+          <EdgeLayout.Curve>
+            <mssgle:Curve StartConnector="{assembly:Null}" EndConnector="-292.833333333333,60" Start="0,0" End="-292.833333333333,52.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection Capacity="5">
+                  <mssgle:LineSegment End="0,20.3586550435865"/>
+                  <mssgle:CubicBezierSegment Point1="0,20.3586550435865" Point2="0,24.3586550435865" Point3="-4,24.3586550435865"/>
+                  <mssgle:LineSegment End="-288.833333333333,24.3586550435865"/>
+                  <mssgle:CubicBezierSegment Point1="-288.833333333333,24.3586550435865" Point2="-292.833333333333,24.3586550435865" Point3="-292.833333333333,28.3586550435865"/>
+                  <mssgle:LineSegment End="-292.833333333333,52.5"/>
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <mssgm:EdgeLabel BoundingBox="-162.696959635417,29.3586550435865,32.5605859375,11.609375" RelativePosition="Any"/>
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout Id="Package\Update Case Lookups.Paths[OLE DB Source Output]" TopLeft="486.5,47.4999999999999">
+          <EdgeLayout.Curve>
+            <mssgle:Curve StartConnector="{assembly:Null}" EndConnector="0,60" Start="0,0" End="0,52.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection Capacity="5">
+                  <mssgle:LineSegment End="0,52.5"/>
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection/>
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout Id="Package\Update Case Lookups.Paths[Error Output1]" TopLeft="168.5,251.5">
+          <EdgeLayout.Curve>
+            <mssgle:Curve StartConnector="{assembly:Null}" EndConnector="269,61" Start="0,0" End="269,53.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection Capacity="5">
+                  <mssgle:LineSegment End="0,26.5"/>
+                  <mssgle:CubicBezierSegment Point1="0,26.5" Point2="0,30.5" Point3="4,30.5"/>
+                  <mssgle:LineSegment End="265,30.5"/>
+                  <mssgle:CubicBezierSegment Point1="265,30.5" Point2="269,30.5" Point3="269,34.5"/>
+                  <mssgle:LineSegment End="269,53.5"/>
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <mssgm:EdgeLabel BoundingBox="106.16361328125,35.5,56.6727734375,11.43359375" RelativePosition="Any"/>
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        
+        
+        
+      </GraphLayout>
+    </LayoutInfo>
+  </TaskHost><PipelineComponentMetadata design-time-name="Package\Update Case Lookups\OLE DB Destination - Error Table">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+      <Property>
+        <Name>TableInfoObjectType</Name>
+        <Value type="q2:string">Table</Value>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata><PipelineComponentMetadata design-time-name="Package\Update Case Lookups\OLE DB Source - Staging">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+      <Property>
+        <Name>TableInfoObjectType</Name>
+        <Value type="q2:string">Table</Value>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata><PipelineComponentMetadata design-time-name="Package\Update Case Lookups\OLE DB Destination - GUID Table">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+      <Property>
+        <Name>TableInfoObjectType</Name>
+        <Value type="q2:string">Table</Value>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata><PipelineComponentMetadata design-time-name="Package\Update Case Lookups\OLE DB Destination - Error Table 1">
+    <Properties>
+      <Property>
+        <Name>DataSourceViewID</Name>
+      </Property>
+      <Property>
+        <Name>TableInfoObjectType</Name>
+        <Value type="q2:string">Table</Value>
+      </Property>
+    </Properties>
+  </PipelineComponentMetadata></Objects>]]></DTS:DesignTimeProperties></DTS:Executable>
