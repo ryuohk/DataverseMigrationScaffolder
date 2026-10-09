@@ -33,7 +33,7 @@
 
   <ItemGroup>
     <!-- The built-in SSIS reference project (a neutral copy of the MigrationHarnessTemplate repo,
-         made by migration-harness-generator's tools/make_builtin_template.py), unpacked when used. -->
+         made by tools/MakeBuiltInTemplate), unpacked when used. -->
     <EmbeddedResource Include="BuiltInTemplate\**\*" LogicalName="BuiltInTemplate/%(RecursiveDir)%(Filename)%(Extension)" />
   </ItemGroup>
 

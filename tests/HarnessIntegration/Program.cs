@@ -7,11 +7,39 @@ using DataverseMigrationScaffolder.Core;
 class Program
 {
     static void Assert(bool condition, string message) { if (!condition) throw new Exception(message); }
+    // With no arguments, runs on the neutral fixtures of tests/HarnessTests/TestData (as CI does).
     static int Main(string[] args)
+    {
+        if (args.Length != 0) return Run(args);
+        string data = null;
+        for (var dir = new DirectoryInfo(AppDomain.CurrentDomain.BaseDirectory); dir != null && data == null; dir = dir.Parent)
+        {
+            var candidate = Path.Combine(dir.FullName, "tests", "HarnessTests", "TestData", "Fixtures");
+            if (Directory.Exists(candidate)) data = candidate;
+        }
+        if (data == null) { Console.Error.WriteLine("Usage: HarnessIntegration [manifest reference.sln package.dtsx new-output]"); return 2; }
+        var root = Path.Combine(Path.GetTempPath(), "HarnessIntegration-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var reference = Path.Combine(root, "Reference");
+            Directory.CreateDirectory(reference);
+            foreach (var file in Directory.GetFiles(Path.Combine(data, "reference")))
+                File.Copy(file, Path.Combine(reference, Path.GetFileName(file)));
+            var solution = Path.Combine(root, "Reference.sln");
+            File.WriteAllText(solution, "Project(\"{C9674DCB-5085-4A16-B785-4C70DD1589BD}\") = \"ReferenceHarness\", \"Reference\\ReferenceHarness.dtproj\", \"{00000000-0000-0000-0000-000000000001}\"\r\nEndProject\r\n");
+            return Run(new[] { Path.Combine(data, "scaffolder", "manifest.json"), solution, "01b - Harness.dtsx", Path.Combine(root, "out") });
+        }
+        finally
+        {
+            try { Directory.Delete(root, true); } catch (IOException) { }
+        }
+    }
+
+    static int Run(string[] args)
     {
         try
         {
-            if (args.Length != 4) throw new Exception("Usage: HarnessIntegration manifest reference.sln package.dtsx new-output");
+            if (args.Length != 4) throw new Exception("Usage: HarnessIntegration [manifest reference.sln package.dtsx new-output]");
             var projects = HarnessGenerator.Projects(args[1]);
             Assert(projects.Length > 0, "Solution project discovery");
             var project = projects.First(p => HarnessGenerator.Packages(p).Contains(args[2]));
