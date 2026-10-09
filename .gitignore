@@ -4,3 +4,4 @@ obj/
 *.user
 *.nupkg
 nuget.exe
+tools/release-check.local.txt
