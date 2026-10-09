@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
     <id>DataverseMigrationScaffolder</id>
-    <version>1.2026.10.9</version>
+    <version>1.2026.10.10</version>
     <title>Dataverse Migration Scaffolder</title>
     <authors>Ryu Ohkawa</authors>
     <owners>Ryu Ohkawa</owners>
@@ -13,6 +13,10 @@
     <description>XrmToolBox tool that scaffolds a SQL data-migration harness from Dataverse metadata: staging table and GUID mapping table DDL scripts batched strictly by dependency tier with UNIQUE legacy match keys, a styled Excel data dictionary, a machine-readable manifest.json, and a harness metadata seed (meta.Entity / meta.ColumnMap), and generates a tailored SSIS migration harness project from them - including a deferred second pass for every dependency cycle it breaks. Filters tables and columns by solution, remembers selections per environment, and is fully configurable (prefixes, match-key suffixes, dependency-ranking exclusions).</description>
     <summary>Scaffold SQL staging and GUID mapping tables from Dataverse metadata, batched by dependency tier - plus data dictionary, JSON run manifest, harness metadata seed, and SSIS migration harness generation.</summary>
     <releaseNotes>
+1.2026.10.10: SSIS Settings layout and Legacy ID column.
+- SSIS Settings is arranged in Template and New project sections with Generate, Save and Cancel buttons; building from a previous run is behind a link.
+- The table list has a Legacy ID column showing each table's legacy match key; tables without a single legacy ID column are marked in red as not migrated, and the status line counts them.
+
 1.2026.10.9: Built-in SSIS template.
 - Generate SSIS Project no longer needs a reference project: choose the built-in template in SSIS Settings and enter your SQL Server and the staging and legacy database names (the Dataverse URL defaults to the connected environment). It has the recommended KingswaySoft settings, owner, state and audit mappings, staging SQL and error logging; every table and column in the result comes from your environment. The client id and secret are entered in Visual Studio and never stored.
 - Your own reference project can still be used, as before.

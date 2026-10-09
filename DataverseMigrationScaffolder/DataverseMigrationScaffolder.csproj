@@ -10,7 +10,7 @@
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
     <!-- Keep the build machine's folder (user name, OneDrive path) out of the published DLL. -->
     <PathMap>$(MSBuildProjectDirectory)=C:\src\DataverseMigrationScaffolder</PathMap>
-    <Version>1.2026.10.9</Version>
+    <Version>1.2026.10.10</Version>
     <Description>XrmToolBox tool that generates staging and GUID mapping DDL and grouped SSIS migration projects from Dataverse metadata and an SSIS reference project.</Description>
     <Authors>Ryu Ohkawa</Authors>
     <Company>Ryu Ohkawa</Company>
