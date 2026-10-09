@@ -156,5 +156,6 @@ if ($Install) {
 Write-Host ''
 Write-Host "Release $Version is ready. To publish:" -ForegroundColor Green
 if (-not $NoCommit) { Write-Host "  git push -u origin release-$Version   (then open and merge the pull request)" }
-Write-Host "  ./nuget.exe push artifacts/DataverseMigrationScaffolder.$Version.nupkg -Source https://api.nuget.org/v3/index.json -ApiKey <your key>"
+# Full paths, so the command works from any folder.
+Write-Host "  & `"$(Join-Path $root 'nuget.exe')`" push `"$(Join-Path $root "artifacts\DataverseMigrationScaffolder.$Version.nupkg")`" -Source https://api.nuget.org/v3/index.json -ApiKey <your key>"
 Write-Host "  git tag v$Version <merge commit>; git push origin v$Version   (optional)"
