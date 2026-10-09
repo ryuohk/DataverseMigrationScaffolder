@@ -25,6 +25,8 @@ namespace DataverseMigrationScaffolder
 
         private ToolSettings _settings = new ToolSettings();
         private List<EntityMetadata> _allTables = new List<EntityMetadata>();
+        /// <summary>Column names per table, for the Legacy ID column; null when they could not be read.</summary>
+        private Dictionary<string, string[]> _columnNames;
         private GenerationResult _lastResult;
 
         /// <summary>Attribute metadata cache for the current session/connection.</summary>
@@ -250,6 +252,8 @@ namespace DataverseMigrationScaffolder
 
             var lblMatchKey = new Label { Text = "Match key:", Location = new Point(362, 85), AutoSize = true };
             _txtMatchKey = new TextBox { Location = new Point(430, 82), Width = 84 };
+            // The grid's Legacy ID column follows the match-key suffixes.
+            _txtMatchKey.Leave += (s, e) => { if (_columnNames != null) { ApplyFilter(); UpdateCheckedCount(); } };
 
             grpStep3.Controls.AddRange(new Control[]
             {
@@ -360,6 +364,7 @@ namespace DataverseMigrationScaffolder
             _grid.Columns.Add(NewTextColumn("colLogical", "Logical Name"));
             _grid.Columns.Add(NewTextColumn("colDisplay", "Display Name"));
             _grid.Columns.Add(NewTextColumn("colCategory", "Category"));
+            _grid.Columns.Add(NewTextColumn("colLegacyId", "Legacy ID"));
 
             WireHeaderCheckBox("colInclude", "Include");
             _grid.Columns["colInclude"].ToolTipText = Tips.Wrap("Check the tables to migrate. The header checkbox checks or unchecks "
@@ -368,6 +373,10 @@ namespace DataverseMigrationScaffolder
             _grid.Columns["colDisplay"].ToolTipText = "The table's display name, as users see it in Dataverse";
             _grid.Columns["colCategory"].ToolTipText = Tips.Wrap("Publisher prefix from the logical name; \"oob\" = out-of-the-box table "
                 + "with no prefix");
+            _grid.Columns["colLegacyId"].ToolTipText = Tips.Wrap("The table's legacy ID column: a column whose name ends with the Match key "
+                + "suffix (Step 3). The SSIS project matches and records migrated records by it.\n"
+                + "\"none - not migrated\": the table has no such column, so the SSIS project leaves it out (its staging and GUID "
+                + "table scripts are still generated). Add a legacy ID column to the table in Dataverse to migrate it.");
 
             // Commit checkbox clicks immediately so the stored state is always current.
             _grid.CurrentCellDirtyStateChanged += (s, e) =>
@@ -613,7 +622,14 @@ namespace DataverseMigrationScaffolder
 
         private void UpdateCheckedCount()
         {
-            _sslChecked.Text = string.Format("Checked: {0}", _checkedTables.Count);
+            var notMigrated = _columnNames == null ? 0 : _checkedTables.Count(t =>
+            {
+                var keys = MatchKeysOf(t);
+                return keys != null && keys.Count != 1;
+            });
+            _sslChecked.Text = notMigrated == 0
+                ? string.Format("Checked: {0}", _checkedTables.Count)
+                : string.Format("Checked: {0} ({1} not migrated: no single legacy ID column)", _checkedTables.Count, notMigrated);
         }
 
         private void UpdateOrgLabel()
@@ -803,12 +819,17 @@ namespace DataverseMigrationScaffolder
             WorkAsync(new WorkAsyncInfo
             {
                 Message = "Retrieving tables and solutions...",
+                ProgressChanged = e => SetWorkingMessage(e.UserState == null ? "" : e.UserState.ToString()),
                 Work = (worker, args) =>
                 {
                     var service = new MetadataService(Service);
                     var tables = service.GetAllTables();
                     var solutions = service.GetSolutions();
-                    args.Result = Tuple.Create(tables, solutions);
+                    worker.ReportProgress(0, "Reading column names...");
+                    Dictionary<string, string[]> columns;
+                    try { columns = service.GetAllColumnNames(); }
+                    catch (Exception) { columns = null; }   // the Legacy ID column then stays blank
+                    args.Result = Tuple.Create(tables, solutions, columns);
                 },
                 PostWorkCallBack = args =>
                 {
@@ -817,9 +838,10 @@ namespace DataverseMigrationScaffolder
                         MessageBox.Show(this, args.Error.Message, "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         return;
                     }
-                    var result = (Tuple<List<EntityMetadata>, List<SolutionInfo>>)args.Result;
+                    var result = (Tuple<List<EntityMetadata>, List<SolutionInfo>, Dictionary<string, string[]>>)args.Result;
                     _allTables = result.Item1;
                     _solutions = result.Item2;
+                    _columnNames = result.Item3;
                     PopulateSolutionPicker();
                     PopulateCategoryFilter();
                     UpdateCheckedCount();
@@ -964,10 +986,43 @@ namespace DataverseMigrationScaffolder
                 row.Cells["colDisplay"].Value = display;
                 row.Cells["colCategory"].Value = category;
                 row.Cells["colInclude"].Value = _checkedTables.Contains(logical);
+                ShowLegacyId(row.Cells["colLegacyId"], logical);
             }
 
             _grid.ResumeLayout();
             UpdateHeaderCheckState();
+        }
+
+        /// <summary>The table's match-key columns under the current Match key suffixes; null when column
+        /// names are unknown.</summary>
+        private List<string> MatchKeysOf(string logicalName)
+        {
+            string[] columns;
+            if (_columnNames == null || !_columnNames.TryGetValue(logicalName, out columns)) return null;
+            var suffixes = (_txtMatchKey.Text ?? "").Split(',').Select(s => s.Trim()).Where(s => s.Length > 0).ToList();
+            return columns.Where(c => suffixes.Any(s => c.EndsWith(s, StringComparison.OrdinalIgnoreCase)))
+                          .OrderBy(c => c, StringComparer.OrdinalIgnoreCase).ToList();
+        }
+
+        private void ShowLegacyId(DataGridViewCell cell, string logicalName)
+        {
+            var keys = MatchKeysOf(logicalName);
+            if (keys == null) { cell.Value = ""; return; }
+            if (keys.Count == 0)
+            {
+                cell.Value = "none - not migrated";
+                cell.Style.ForeColor = Color.Firebrick;
+                cell.Style.SelectionForeColor = Color.MistyRose;
+                return;
+            }
+            cell.Value = string.Join(", ", keys);
+            if (keys.Count > 1)
+            {
+                // The SSIS project needs exactly one legacy key column per table.
+                cell.Value += " - more than one, not migrated";
+                cell.Style.ForeColor = Color.Firebrick;
+                cell.Style.SelectionForeColor = Color.MistyRose;
+            }
         }
 
         private static bool IsChecked(DataGridViewRow row, string column)

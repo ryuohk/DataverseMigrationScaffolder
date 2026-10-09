@@ -4,6 +4,7 @@ using System.Linq;
 using Microsoft.Xrm.Sdk;
 using Microsoft.Xrm.Sdk.Messages;
 using Microsoft.Xrm.Sdk.Metadata;
+using Microsoft.Xrm.Sdk.Metadata.Query;
 using Microsoft.Xrm.Sdk.Query;
 
 namespace DataverseMigrationScaffolder.Core
@@ -31,6 +32,27 @@ namespace DataverseMigrationScaffolder.Core
                 .Where(e => e.IsIntersect != true)
                 .OrderBy(e => e.LogicalName, StringComparer.OrdinalIgnoreCase)
                 .ToList();
+        }
+
+        /// <summary>
+        /// The column logical names of every table, in one request that returns nothing else (so it
+        /// stays fast), for spotting tables without a legacy match key before generating.
+        /// </summary>
+        public Dictionary<string, string[]> GetAllColumnNames()
+        {
+            var request = new RetrieveMetadataChangesRequest
+            {
+                Query = new EntityQueryExpression
+                {
+                    Properties = new MetadataPropertiesExpression("LogicalName", "Attributes"),
+                    AttributeQuery = new AttributeQueryExpression { Properties = new MetadataPropertiesExpression("LogicalName") },
+                },
+            };
+            var response = (RetrieveMetadataChangesResponse)_service.Execute(request);
+            return response.EntityMetadata.Where(e => e.LogicalName != null).ToDictionary(
+                e => e.LogicalName,
+                e => (e.Attributes ?? new AttributeMetadata[0]).Select(a => a.LogicalName).Where(n => n != null).ToArray(),
+                StringComparer.OrdinalIgnoreCase);
         }
 
         /// <summary>Full attribute metadata for one table.</summary>

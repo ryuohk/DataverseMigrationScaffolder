@@ -1,0 +1,12 @@
+﻿<?xml version="1.0"?>
+<DTS:ConnectionManager xmlns:DTS="www.microsoft.com/SqlServer/Dts"
+  DTS:ObjectName="EXAMPLE-SQL.Legacy"
+  DTS:DTSID="{94D64185-14BC-4069-A0A8-3283C7675983}"
+  DTS:CreationName="OLEDB">
+  <DTS:ObjectData>
+    <DTS:ConnectionManager
+      DTS:ConnectRetryCount="1"
+      DTS:ConnectRetryInterval="5"
+      DTS:ConnectionString="Data Source=EXAMPLE-SQL;Initial Catalog=Legacy;Provider=MSOLEDBSQL.1;Integrated Security=SSPI;Auto Translate=False;Application Name=SSIS-MigrationHarness1-{94D64185-14BC-4069-A0A8-3283C7675983}EXAMPLE-SQL.Legacy;" />
+  </DTS:ObjectData>
+</DTS:ConnectionManager>

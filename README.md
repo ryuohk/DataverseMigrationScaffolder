@@ -231,7 +231,7 @@ DataverseMigrationScaffolder/
 
 Step 4's **Generate SSIS Project** button builds the migration harness straight from the
 checked tables. Nothing else needs to be installed: the generator is part of the plugin
-(`DataverseMigrationScaffolder/Harness/`, a C# port of the original Python tool), and no
+(`DataverseMigrationScaffolder/Harness/`), and no
 script or manifest files need to be written first.
 
 1. Load tables, check the ones to migrate, and set the output folder (steps 1-3).
@@ -335,17 +335,43 @@ The test checks solution/project discovery, in-process generation, unchanged ref
 files, byte-identical connection managers, invalid package rejection, nonempty-output
 refusal and error reporting. No real SSIS project or connection string is embedded.
 
-The C# generator is checked against the original Python generator
-(`../migration-harness-generator`): `tests/HarnessParity` builds a `harnessgen.exe` with
-the Python tool's arguments, and `python tools/parity.py <harnessgen.exe>` in the
-generator repository runs both on the same inputs and requires every output file to be
-byte-identical (and the same errors for bad inputs).
+### Generator regression tests
+
+`tests/HarnessTests` generates every scenario in `tests/HarnessTests/TestData/scenarios.json`
+(templates with and without a Stage task, GUID sync, polymorphic lookups, UNIQUE GUID keys,
+staging `tablename` logging, the built-in template, owner and audit columns, protection levels,
+and the expected errors for bad input) from its fixtures, once from files and once from text held
+in memory as the plugin does, and requires every output file to match `TestData/Expected`
+byte for byte (the output folder is written as `{OUTPUT}`). The expected output was recorded from
+the original Python generator, which this C# generator replaced.
 
 ```powershell
-dotnet build tests/HarnessParity/HarnessParity.csproj -c Release
-cd ../migration-harness-generator
-python tools/parity.py ../DataverseMigrationScaffolder/tests/HarnessParity/bin/Release/net48/harnessgen.exe
+dotnet build tests/HarnessTests/HarnessTests.csproj -c Release
+tests/HarnessTests/bin/Release/net48/HarnessTests.exe
+# After an intended change to the generated output, review the differences, then record it:
+tests/HarnessTests/bin/Release/net48/HarnessTests.exe --update
 ```
+
+### Validate a generated project in SSIS
+
+`tools/validate-harness.ps1 -ProjectDir <generated project>` builds the project with Visual Studio
+and runs or validates every package against a throwaway LocalDB database (never your staging
+database). It needs Visual Studio with SSIS Projects, KingswaySoft and SQL Server Express LocalDB.
+
+### Refresh the built-in template
+
+`tools/MakeBuiltInTemplate` makes `DataverseMigrationScaffolder/BuiltInTemplate` from a clone of
+your own reference project, replacing organization-specific names with neutral ones and removing
+connections, secrets, creator names and personal paths. It fails if anything specific is left.
+The renames and forbidden words come from a rules file you keep outside this repository:
+
+```powershell
+dotnet build tools/MakeBuiltInTemplate/MakeBuiltInTemplate.csproj -c Release
+tools/MakeBuiltInTemplate/bin/Release/net48/MakeBuiltInTemplate.exe <reference repo> DataverseMigrationScaffolder/BuiltInTemplate <manifest.json> <rules.json>
+```
+
+`rules.json` is `{"renames": [["old", "new"], ...], "forbidden": ["regex", ...]}`; the manifest must
+contain the reference project's table, for its primary name and match key.
 
 ## License
 
