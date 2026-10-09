@@ -1,0 +1,45 @@
+# Builds the plugin and runs the generator tests on every pull request and every push to main.
+name: Build and test
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build
+        run: |
+          dotnet build DataverseMigrationScaffolder/DataverseMigrationScaffolder.csproj -c Release
+          dotnet build tests/HarnessTests/HarnessTests.csproj -c Release
+          dotnet build tests/HarnessIntegration/HarnessIntegration.csproj -c Release
+          dotnet build tools/MakeBuiltInTemplate/MakeBuiltInTemplate.csproj -c Release
+
+      - name: Generator regression tests
+        run: tests/HarnessTests/bin/Release/net48/HarnessTests.exe
+
+      - name: Integration test
+        run: tests/HarnessIntegration/bin/Release/net48/HarnessIntegration.exe
+
+      # The csproj and nuspec versions must match, or XrmToolBox keeps offering the same update.
+      - name: Versions match
+        shell: pwsh
+        run: |
+          $csproj = ([xml](Get-Content DataverseMigrationScaffolder/DataverseMigrationScaffolder.csproj)).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
+          $nuspec = ([xml](Get-Content DataverseMigrationScaffolder.nuspec)).package.metadata.version
+          if ($csproj -ne $nuspec) { throw "csproj version $csproj does not match nuspec version $nuspec" }
+          "Version $csproj"
+
+      # The package must pack (release notes with a raw < or > break it).
+      - name: Pack
+        run: ./nuget.exe pack DataverseMigrationScaffolder.nuspec -OutputDirectory artifacts
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nupkg
+          path: artifacts/*.nupkg

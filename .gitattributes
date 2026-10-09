@@ -1,0 +1,4 @@
+# Stored byte for byte, never converted between LF and CRLF: the built-in template is shipped as
+# is, and the generator's expected output is compared byte for byte (some files mix LF and CRLF).
+DataverseMigrationScaffolder/BuiltInTemplate/** -text
+tests/HarnessTests/TestData/** -text

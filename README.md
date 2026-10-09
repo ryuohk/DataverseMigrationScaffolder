@@ -326,14 +326,21 @@ Do not treat successful generation as complete coverage of all selected tables.
 ```powershell
 dotnet build DataverseMigrationScaffolder/DataverseMigrationScaffolder.csproj -c Release
 dotnet build tests/HarnessIntegration/HarnessIntegration.csproj -c Release
-# Test the same integration entry point used by the dialog, using an EMPTY folder:
+# Test the integration entry point used by the dialog on the neutral test fixtures:
+tests/HarnessIntegration/bin/Release/net48/HarnessIntegration.exe
+# or on your own scaffolder output and reference project, into an EMPTY folder:
 tests/HarnessIntegration/bin/Release/net48/HarnessIntegration.exe manifest.json reference.sln template.dtsx new-output
 ./nuget.exe pack DataverseMigrationScaffolder.nuspec -OutputDirectory artifacts
 ```
 
 The test checks solution/project discovery, in-process generation, unchanged reference
 files, byte-identical connection managers, invalid package rejection, nonempty-output
-refusal and error reporting. No real SSIS project or connection string is embedded.
+refusal, error reporting, DontSaveSensitive and the built-in template. No real SSIS project or
+connection string is embedded.
+
+GitHub Actions (`.github/workflows/build.yml`) builds everything and runs both tests on every pull
+request and push to `main`, checks that the csproj and nuspec versions match, and packs the
+NuGet package (downloadable from the run as the `nupkg` artifact).
 
 ### Generator regression tests
 
@@ -343,7 +350,8 @@ staging `tablename` logging, the built-in template, owner and audit columns, pro
 and the expected errors for bad input) from its fixtures, once from files and once from text held
 in memory as the plugin does, and requires every output file to match `TestData/Expected`
 byte for byte (the output folder is written as `{OUTPUT}`). The expected output was recorded from
-the original Python generator, which this C# generator replaced.
+the original Python generator, which this C# generator replaced. `TestData` and the built-in
+template are stored byte for byte (`.gitattributes`), so Git never changes their line endings.
 
 ```powershell
 dotnet build tests/HarnessTests/HarnessTests.csproj -c Release
