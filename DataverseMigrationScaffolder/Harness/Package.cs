@@ -245,6 +245,7 @@ namespace DataverseMigrationScaffolder.HarnessGen
                 }
             }
             Apply(root, subst.Apply, generated);
+            KeepErrorTableColumns(doc, columnNames);
             var warnings = RetargetDestinationMetadata(doc, target);
 
             ValidateReferences(root, templateLabel);
@@ -253,7 +254,11 @@ namespace DataverseMigrationScaffolder.HarnessGen
             {
                 if (Xml.Inside(el, isProtected)) continue;
                 if (el.Name == "property" && el.GetAttribute("name") == "LookupTypes") continue;   // entity names, not columns
-                var values = Xml.Attributes(el).Select(a => a.Value).Concat(new[] { Xml.Text(el) }).ToList();
+                // The shared error table's columns keep the reference's names (KeepErrorTableColumns).
+                var errorTable = InErrorDestination(el);
+                if (errorTable && el.Name == "externalMetadataColumn") continue;
+                var values = Xml.Attributes(el).Where(a => !(errorTable && a.Key == "externalMetadataColumnId"))
+                    .Select(a => a.Value).Concat(new[] { Xml.Text(el) }).ToList();
                 foreach (var old in removed)
                     if (values.Any(v => ContainsToken(v, old)))
                         throw new GeneratorException("Reference package " + templateLabel + ": unresolved reference column " + Py.Repr(old)
@@ -278,6 +283,38 @@ namespace DataverseMigrationScaffolder.HarnessGen
             root.SetAttribute("DTS:ObjectName", packageName);
             var bytes = Xml.ToXml(doc);
             return new RenderedPackage(packageName, root.GetAttribute("DTS:DTSID"), root.GetAttribute("DTS:VersionGUID"), bytes, warnings);
+        }
+
+        /// <summary>
+        /// Every table writes to the one shared error table, so its columns keep the reference's
+        /// names: when the reference logs a column that is renamed for the target (such as the legacy
+        /// match key, contoso_legacyid for one table and fabrikam_legacyid for another), the target's
+        /// column is written to the error table column under the reference's name.
+        /// </summary>
+        private static void KeepErrorTableColumns(XmlDocument doc, OrderedMap columnNames)
+        {
+            var renamed = columnNames.Where(p => p.Key != p.Value).ToList();
+            if (renamed.Count == 0) return;
+            foreach (var component in Xml.ByTag(doc, "component").Where(Harness.IsErrorDestination))
+                foreach (var pair in renamed)
+                {
+                    string targetId = "ExternalColumns[" + pair.Value + "]", referenceId = "ExternalColumns[" + pair.Key + "]";
+                    foreach (var ext in Xml.ByTag(component, "externalMetadataColumn").Where(e => e.GetAttribute("name") == pair.Value))
+                    {
+                        ext.SetAttribute("name", pair.Key);
+                        ext.SetAttribute("refId", ext.GetAttribute("refId").Replace(targetId, referenceId));
+                    }
+                    foreach (var input in Xml.ByTag(component, "inputColumn"))
+                        if (input.GetAttribute("externalMetadataColumnId").EndsWith(targetId, StringComparison.Ordinal))
+                            input.SetAttribute("externalMetadataColumnId", input.GetAttribute("externalMetadataColumnId").Replace(targetId, referenceId));
+                }
+        }
+
+        private static bool InErrorDestination(XmlElement el)
+        {
+            for (var node = el.ParentNode as XmlElement; node != null; node = node.ParentNode as XmlElement)
+                if (node.Name == "component") return Harness.IsErrorDestination(node);
+            return false;
         }
 
         // OLE DB AccessMode values that read/write a named table or view; SqlCommand is then unused.

@@ -252,7 +252,7 @@ namespace DataverseMigrationScaffolder.HarnessGen
 
         /// <summary>CREATE TABLE for the error table the reference flow writes to, from the columns its
         /// error destination declares; null if the reference has no error destination.</summary>
-        private static bool IsErrorDestination(XmlElement component)
+        internal static bool IsErrorDestination(XmlElement component)
         {
             var props = Xml.Props(component);
             if (!props.Has("OpenRowset")) return false;

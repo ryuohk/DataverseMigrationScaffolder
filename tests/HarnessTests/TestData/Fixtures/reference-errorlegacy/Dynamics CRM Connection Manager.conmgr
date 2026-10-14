@@ -1,0 +1,14 @@
+﻿<?xml version="1.0"?>
+<DTS:ConnectionManager xmlns:DTS="www.microsoft.com/SqlServer/Dts"
+  DTS:ObjectName="Dynamics CRM Connection Manager"
+  DTS:DTSID="{FDE9DA74-21D4-4CF4-B7E9-B279EEB3BA47}"
+  DTS:CreationName="DynamicsCRM">
+  <DTS:ObjectData>
+    <CrmConnectionManager
+      ConnectionString="AuthenticationType=OAuth;ServiceEndpoint=Soap2011;UserName=;Domain=;ServerUrl=https://example-org.crm.dynamics.com;ProxyUsername=;ProxyMode=NoProxy;ProxyServer=;ProxyServerPort=0;BypassProxyOnLocal=False;HomeRealmUri=;ApiVersion=;OAuthType=ClientCredentials;ClientAppId=00000000-0000-0000-0000-000000000000;TokenPath=;CertificateThumbprint=;Tenant=;AuthorizationServerUrl=;ServiceResource=;ServiceTimeout=120;RetryOnIntermittentErrors=True;IgnoreCertificateErrors=False;TimezoneConversionEngine=Auto;HttpCertificateThumbprint=;HttpCustomHeaders={}"
+      ConnectByProxy="False">
+      <ClientSecret
+        Sensitive="1" xmlns="www.microsoft.com/SqlServer/Dts"></ClientSecret>
+    </CrmConnectionManager>
+  </DTS:ObjectData>
+</DTS:ConnectionManager>
