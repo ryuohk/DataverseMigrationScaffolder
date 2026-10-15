@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2011/08/nuspec.xsd">
   <metadata>
     <id>DataverseMigrationScaffolder</id>
-    <version>1.2026.10.10</version>
+    <version>1.2026.10.15</version>
     <title>Dataverse Migration Scaffolder</title>
     <authors>Ryu Ohkawa</authors>
     <owners>Ryu Ohkawa</owners>
@@ -13,6 +13,10 @@
     <description>XrmToolBox tool that scaffolds a SQL data-migration harness from Dataverse metadata: staging table and GUID mapping table DDL scripts batched strictly by dependency tier with UNIQUE legacy match keys, a styled Excel data dictionary, a machine-readable manifest.json, and a harness metadata seed (meta.Entity / meta.ColumnMap), and generates a tailored SSIS migration harness project from them - including a deferred second pass for every dependency cycle it breaks. Filters tables and columns by solution, remembers selections per environment, and is fully configurable (prefixes, match-key suffixes, dependency-ranking exclusions).</description>
     <summary>Scaffold SQL staging and GUID mapping tables from Dataverse metadata, batched by dependency tier - plus data dictionary, JSON run manifest, harness metadata seed, and SSIS migration harness generation.</summary>
     <releaseNotes>
+1.2026.10.15: Error table logs the legacy ID.
+- The built-in template's error table records each failed row's legacy ID, named after your tables' legacy key, alongside its table name.
+- With your own template, map the legacy ID in its error destinations to log it; tables whose legacy key has a different name write into the same error table column.
+
 1.2026.10.10: SSIS Settings layout and Legacy ID column.
 - SSIS Settings is arranged in Template and New project sections with Generate, Save and Cancel buttons; building from a previous run is behind a link.
 - The table list has a Legacy ID column showing each table's legacy match key; tables without a single legacy ID column are marked in red as not migrated, and the status line counts them.
