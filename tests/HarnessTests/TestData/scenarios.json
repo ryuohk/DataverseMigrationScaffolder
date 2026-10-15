@@ -126,6 +126,15 @@
     ]
   },
   {
+    "name": "builtin-mixed-keys",
+    "args": [
+      "--manifest",
+      "Fixtures/scaffolder-errorlegacy/manifest.json",
+      "--reference-dtproj",
+      "Fixtures/builtin/MigrationHarnessTemplate/MigrationHarnessTemplate.dtproj"
+    ]
+  },
+  {
     "name": "error-guid-columns",
     "args": [
       "--manifest",

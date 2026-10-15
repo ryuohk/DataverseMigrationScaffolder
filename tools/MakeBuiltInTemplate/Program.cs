@@ -61,7 +61,13 @@ internal static class Program
         var legacyManager = legacyDoc.DocumentElement.GetAttribute("DTS:ObjectName");
         var hint = ReferenceHint(files, args[2]);
 
-        if (Directory.Exists(output)) Directory.Delete(output, true);
+        if (Directory.Exists(output))
+        {
+            // Files first: a synced folder (OneDrive) can refuse to delete a folder, but not its files.
+            foreach (var file in Directory.GetFiles(output, "*", SearchOption.AllDirectories)) File.Delete(file);
+            foreach (var dir in Directory.GetDirectories(output, "*", SearchOption.AllDirectories).OrderByDescending(d => d.Length))
+                try { Directory.Delete(dir); } catch (IOException) { }
+        }
         foreach (var source in files)
         {
             var relative = source.Substring(repo.Length + 1);
@@ -78,7 +84,7 @@ internal static class Program
         File.WriteAllText(Path.Combine(project, "template.json"),
             ("{\n  \"table\": \"" + Neutral(hint[0], legacyManager) + "\",\n  \"primaryName\": "
             + (hint[1] == null ? "null" : "\"" + Neutral(hint[1], legacyManager) + "\"") + ",\n  \"matchKey\": \""
-            + Neutral(hint[2], legacyManager) + "\"\n}\n").Replace("\n", "\r\n"), new UTF8Encoding(false));
+            + Neutral(hint[2], legacyManager) + "\",\n  \"" + HarnessProject.ErrorKeyFromTables + "\": true\n}\n").Replace("\n", "\r\n"), new UTF8Encoding(false));
 
         var problems = new List<string>();
         foreach (var path in Directory.GetFiles(output, "*", SearchOption.AllDirectories))

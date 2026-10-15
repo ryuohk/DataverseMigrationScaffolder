@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?><DTS:Executable xmlns:DTS="www.microsoft.com/SqlServer/Dts" DTS:refId="Package" DTS:CreationDate="1/14/2026 9:46:58 PM" DTS:CreationName="Microsoft.Package" DTS:CreatorComputerName="" DTS:CreatorName="" DTS:DTSID="{AA635E60-6625-5F14-B6FC-C0B25FF8CC04}" DTS:ExecutableType="Microsoft.Package" DTS:LastModifiedProductVersion="17.0.1010.2" DTS:LocaleID="1033" DTS:ObjectName="01b - Harness" DTS:PackageType="5" DTS:VersionBuild="334" DTS:VersionGUID="{04C4BFD5-4449-544E-967A-CC6CE2CA1D2B}">
+<?xml version="1.0" encoding="utf-8"?><DTS:Executable xmlns:DTS="www.microsoft.com/SqlServer/Dts" DTS:refId="Package" DTS:CreationDate="1/14/2026 9:46:58 PM" DTS:CreationName="Microsoft.Package" DTS:CreatorComputerName="" DTS:CreatorName="" DTS:DTSID="{AA635E60-6625-5F14-B6FC-C0B25FF8CC04}" DTS:ExecutableType="Microsoft.Package" DTS:LastModifiedProductVersion="17.0.1010.2" DTS:LocaleID="1033" DTS:ObjectName="01b - Harness" DTS:PackageType="5" DTS:VersionBuild="335" DTS:VersionGUID="{04C4BFD5-4449-544E-967A-CC6CE2CA1D2B}">
   <DTS:Property DTS:Name="PackageFormatVersion">8</DTS:Property>
   
   
@@ -375,12 +375,14 @@
                   <inputColumns>
                     <inputColumn refId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].Columns[ErrorCode]" cachedDataType="i4" cachedName="ErrorCode" externalMetadataColumnId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].ExternalColumns[ErrorCode]" lineageId="Package\Migrate Category\Dynamics CRM Destination - Create.Outputs[Error Output].Columns[ErrorCode]"/>
                     <inputColumn refId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].Columns[ErrorMessage]" cachedDataType="wstr" cachedLength="2048" cachedName="ErrorMessage" externalMetadataColumnId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].ExternalColumns[ErrorMessage]" lineageId="Package\Migrate Category\Dynamics CRM Destination - Create.Outputs[Error Output].Columns[ErrorMessage]"/>
+                    <inputColumn refId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].Columns[contoso_legacyid]" cachedName="contoso_legacyid" externalMetadataColumnId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].ExternalColumns[contoso_legacyid]" lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_legacyid]" cachedDataType="wstr" cachedLength="100"/>
                     <inputColumn refId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].Columns[tablename]" cachedName="tablename" externalMetadataColumnId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].ExternalColumns[tablename]" lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[tablename]" cachedDataType="wstr" cachedLength="100"/>
                   </inputColumns>
                   <externalMetadataColumns isUsed="True">
                     <externalMetadataColumn refId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].ExternalColumns[ErrorTimeUtc]" dataType="dbTimeStamp2" name="ErrorTimeUtc" scale="7"/>
                     <externalMetadataColumn refId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].ExternalColumns[ErrorCode]" codePage="1252" dataType="str" length="100" name="ErrorCode"/>
                     <externalMetadataColumn refId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].ExternalColumns[ErrorMessage]" dataType="nText" name="ErrorMessage"/>
+                    <externalMetadataColumn refId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].ExternalColumns[contoso_legacyid]" name="contoso_legacyid" dataType="wstr" length="100"/>
                     <externalMetadataColumn refId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].ExternalColumns[tablename]" name="tablename" dataType="wstr" length="100"/>
                   </externalMetadataColumns>
                 </input>
@@ -417,12 +419,14 @@
                   <inputColumns>
                     <inputColumn refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].Columns[ErrorCode]" cachedDataType="i4" cachedName="ErrorCode" externalMetadataColumnId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[ErrorCode]" lineageId="Package\Migrate Category\Dynamics CRM Destination - Update.Outputs[Error Output].Columns[ErrorCode]"/>
                     <inputColumn refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].Columns[ErrorMessage]" cachedDataType="wstr" cachedLength="2048" cachedName="ErrorMessage" externalMetadataColumnId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[ErrorMessage]" lineageId="Package\Migrate Category\Dynamics CRM Destination - Update.Outputs[Error Output].Columns[ErrorMessage]"/>
+                    <inputColumn refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].Columns[contoso_legacyid]" cachedName="contoso_legacyid" externalMetadataColumnId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[contoso_legacyid]" lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[contoso_legacyid]" cachedDataType="wstr" cachedLength="100"/>
                     <inputColumn refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].Columns[tablename]" cachedName="tablename" externalMetadataColumnId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[tablename]" lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[tablename]" cachedDataType="wstr" cachedLength="100"/>
                   </inputColumns>
                   <externalMetadataColumns isUsed="True">
                     <externalMetadataColumn refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[ErrorTimeUtc]" dataType="dbTimeStamp2" name="ErrorTimeUtc" scale="7"/>
                     <externalMetadataColumn refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[ErrorCode]" codePage="1252" dataType="str" length="100" name="ErrorCode"/>
                     <externalMetadataColumn refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[ErrorMessage]" dataType="nText" name="ErrorMessage"/>
+                    <externalMetadataColumn refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[contoso_legacyid]" name="contoso_legacyid" dataType="wstr" length="100"/>
                     <externalMetadataColumn refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[tablename]" name="tablename" dataType="wstr" length="100"/>
                   </externalMetadataColumns>
                 </input>
@@ -560,60 +564,10 @@
         <NodeLayout Size="242,42" Id="Package\Migrate Category\OLE DB Destination - Error Table" TopLeft="884.5,312.5"/>
         <NodeLayout Size="256,42" Id="Package\Migrate Category\Dynamics CRM Destination - Create" TopLeft="614.5,208.5"/>
         <NodeLayout Size="251,42" Id="Package\Migrate Category\OLE DB Destination - Error Table 1" TopLeft="312,312.5"/>
-        <NodeLayout Size="245,42" Id="Package\Migrate Category\OLE DB Destination - GUID Table" TopLeft="579,312.5"/>
+        <NodeLayout Size="204,42" Id="Package\Migrate Category\OLE DB Source - Staging" TopLeft="384.5,5.49999999999989"/>
         <NodeLayout Size="258,42" Id="Package\Migrate Category\Dynamics CRM Destination - Update" TopLeft="39.5,209.5"/>
         <NodeLayout Size="159,42" Id="Package\Migrate Category\Conditional Split" TopLeft="407,107.5"/>
-        <NodeLayout Size="204,42" Id="Package\Migrate Category\OLE DB Source - Staging" TopLeft="384.5,5.49999999999989"/>
-        <EdgeLayout Id="Package\Migrate Category.Paths[Update]" TopLeft="461.333333333333,149.5">
-          <EdgeLayout.Curve>
-            <mssgle:Curve StartConnector="{assembly:Null}" EndConnector="-292.833333333333,60" Start="0,0" End="-292.833333333333,52.5">
-              <mssgle:Curve.Segments>
-                <mssgle:SegmentCollection Capacity="5">
-                  <mssgle:LineSegment End="0,20.3586550435865"/>
-                  <mssgle:CubicBezierSegment Point1="0,20.3586550435865" Point2="0,24.3586550435865" Point3="-4,24.3586550435865"/>
-                  <mssgle:LineSegment End="-288.833333333333,24.3586550435865"/>
-                  <mssgle:CubicBezierSegment Point1="-288.833333333333,24.3586550435865" Point2="-292.833333333333,24.3586550435865" Point3="-292.833333333333,28.3586550435865"/>
-                  <mssgle:LineSegment End="-292.833333333333,52.5"/>
-                </mssgle:SegmentCollection>
-              </mssgle:Curve.Segments>
-            </mssgle:Curve>
-          </EdgeLayout.Curve>
-          <EdgeLayout.Labels>
-            <mssgm:EdgeLabel BoundingBox="-162.696959635417,29.3586550435865,32.5605859375,11.609375" RelativePosition="Any"/>
-          </EdgeLayout.Labels>
-        </EdgeLayout>
-        <EdgeLayout Id="Package\Migrate Category.Paths[OLE DB Source Output]" TopLeft="486.5,47.4999999999999">
-          <EdgeLayout.Curve>
-            <mssgle:Curve StartConnector="{assembly:Null}" EndConnector="0,60" Start="0,0" End="0,52.5">
-              <mssgle:Curve.Segments>
-                <mssgle:SegmentCollection Capacity="5">
-                  <mssgle:LineSegment End="0,52.5"/>
-                </mssgle:SegmentCollection>
-              </mssgle:Curve.Segments>
-            </mssgle:Curve>
-          </EdgeLayout.Curve>
-          <EdgeLayout.Labels>
-            <EdgeLabelCollection/>
-          </EdgeLayout.Labels>
-        </EdgeLayout>
-        <EdgeLayout Id="Package\Migrate Category.Paths[Error Output1]" TopLeft="168.5,251.5">
-          <EdgeLayout.Curve>
-            <mssgle:Curve StartConnector="{assembly:Null}" EndConnector="269,61" Start="0,0" End="269,53.5">
-              <mssgle:Curve.Segments>
-                <mssgle:SegmentCollection Capacity="5">
-                  <mssgle:LineSegment End="0,26.5"/>
-                  <mssgle:CubicBezierSegment Point1="0,26.5" Point2="0,30.5" Point3="4,30.5"/>
-                  <mssgle:LineSegment End="265,30.5"/>
-                  <mssgle:CubicBezierSegment Point1="265,30.5" Point2="269,30.5" Point3="269,34.5"/>
-                  <mssgle:LineSegment End="269,53.5"/>
-                </mssgle:SegmentCollection>
-              </mssgle:Curve.Segments>
-            </mssgle:Curve>
-          </EdgeLayout.Curve>
-          <EdgeLayout.Labels>
-            <mssgm:EdgeLabel BoundingBox="106.16361328125,35.5,56.6727734375,11.43359375" RelativePosition="Any"/>
-          </EdgeLayout.Labels>
-        </EdgeLayout>
+        <NodeLayout Size="245,42" Id="Package\Migrate Category\OLE DB Destination - GUID Table" TopLeft="579,312.5"/>
         <EdgeLayout Id="Package\Migrate Category.Paths[Error Output]" TopLeft="783.833333333333,250.5">
           <EdgeLayout.Curve>
             <mssgle:Curve StartConnector="{assembly:Null}" EndConnector="221.666666666667,62" Start="0,0" End="221.666666666667,54.5">
@@ -664,6 +618,56 @@
             <mssgm:EdgeLabel BoundingBox="100.347799479167,28.9526774595268,30.137734375,9.5537109375" RelativePosition="Any"/>
           </EdgeLayout.Labels>
         </EdgeLayout>
+        <EdgeLayout Id="Package\Migrate Category.Paths[Update]" TopLeft="461.333333333333,149.5">
+          <EdgeLayout.Curve>
+            <mssgle:Curve StartConnector="{assembly:Null}" EndConnector="-292.833333333333,60" Start="0,0" End="-292.833333333333,52.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection Capacity="5">
+                  <mssgle:LineSegment End="0,20.3586550435865"/>
+                  <mssgle:CubicBezierSegment Point1="0,20.3586550435865" Point2="0,24.3586550435865" Point3="-4,24.3586550435865"/>
+                  <mssgle:LineSegment End="-288.833333333333,24.3586550435865"/>
+                  <mssgle:CubicBezierSegment Point1="-288.833333333333,24.3586550435865" Point2="-292.833333333333,24.3586550435865" Point3="-292.833333333333,28.3586550435865"/>
+                  <mssgle:LineSegment End="-292.833333333333,52.5"/>
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <mssgm:EdgeLabel BoundingBox="-162.696959635417,29.3586550435865,32.5605859375,11.609375" RelativePosition="Any"/>
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout Id="Package\Migrate Category.Paths[OLE DB Source Output]" TopLeft="486.5,47.4999999999999">
+          <EdgeLayout.Curve>
+            <mssgle:Curve StartConnector="{assembly:Null}" EndConnector="0,60" Start="0,0" End="0,52.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection Capacity="5">
+                  <mssgle:LineSegment End="0,52.5"/>
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection/>
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout Id="Package\Migrate Category.Paths[Error Output1]" TopLeft="168.5,251.5">
+          <EdgeLayout.Curve>
+            <mssgle:Curve StartConnector="{assembly:Null}" EndConnector="269,61" Start="0,0" End="269,53.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection Capacity="5">
+                  <mssgle:LineSegment End="0,26.5"/>
+                  <mssgle:CubicBezierSegment Point1="0,26.5" Point2="0,30.5" Point3="4,30.5"/>
+                  <mssgle:LineSegment End="265,30.5"/>
+                  <mssgle:CubicBezierSegment Point1="265,30.5" Point2="269,30.5" Point3="269,34.5"/>
+                  <mssgle:LineSegment End="269,53.5"/>
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <mssgm:EdgeLabel BoundingBox="106.16361328125,35.5,56.6727734375,11.43359375" RelativePosition="Any"/>
+          </EdgeLayout.Labels>
+        </EdgeLayout>
       </GraphLayout>
     </LayoutInfo>
   </TaskHost><PipelineComponentMetadata design-time-name="Package\Migrate Category\OLE DB Destination - Error Table">
@@ -686,7 +690,7 @@
         <Value type="q2:string">Table</Value>
       </Property>
     </Properties>
-  </PipelineComponentMetadata><PipelineComponentMetadata design-time-name="Package\Migrate Category\OLE DB Destination - GUID Table">
+  </PipelineComponentMetadata><PipelineComponentMetadata design-time-name="Package\Migrate Category\OLE DB Source - Staging">
     <Properties>
       <Property>
         <Name>DataSourceViewID</Name>
@@ -696,7 +700,7 @@
         <Value type="q2:string">Table</Value>
       </Property>
     </Properties>
-  </PipelineComponentMetadata><PipelineComponentMetadata design-time-name="Package\Migrate Category\OLE DB Source - Staging">
+  </PipelineComponentMetadata><PipelineComponentMetadata design-time-name="Package\Migrate Category\OLE DB Destination - GUID Table">
     <Properties>
       <Property>
         <Name>DataSourceViewID</Name>

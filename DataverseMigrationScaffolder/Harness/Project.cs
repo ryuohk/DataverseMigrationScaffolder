@@ -269,6 +269,14 @@ namespace DataverseMigrationScaffolder.HarnessGen
             }
             var skippedNames = new HashSet<string>(skipped.Select(s => s.Key), StringComparer.Ordinal);
             var migrated = new HashSet<string>(selected.Select(t => t.LogicalName).Where(n => !skippedNames.Contains(n)), StringComparer.Ordinal);
+            if (TemplateFlag(template.Directory, ErrorKeyFromTables) && reference.MatchKeys.Count > 0)
+            {
+                // The built-in template's sample key (new_legacyid) means nothing in the user's project:
+                // the error table's legacy ID column is named after the migrated tables' own key.
+                var key = selected.Where(t => migrated.Contains(t.LogicalName) && t.MatchKeys.Count == 1)
+                                  .GroupBy(t => t.MatchKeys[0]).OrderByDescending(g => g.Count()).Select(g => g.Key).FirstOrDefault();
+                if (key != null) reference.ErrorKeyColumn = key;
+            }
             string seedFile;
             Dictionary<string, List<Dictionary<string, object>>> seedRows = null;
             if (inMemory)
@@ -310,7 +318,7 @@ namespace DataverseMigrationScaffolder.HarnessGen
                 // every harness package also creates its own group's (both only create missing tables).
                 new SqlTask("Create GUID Tables", string.Join("\n", units.Select(u => guidSql[u.FileNumber]))),
             };
-            var errorSql = Harness.ErrorTableSql(xml);
+            var errorSql = Harness.ErrorTableSql(xml, reference);
             if (errorSql != null) setupTasks.Insert(0, new SqlTask("Create Error Table", errorSql));
             var setup = Harness.RenderSqlPackage(xml, label, reference, Harness.SetupName, seed, setupTasks, stagingConnection.Dtsid);
 
@@ -623,6 +631,19 @@ namespace DataverseMigrationScaffolder.HarnessGen
                 PrimaryName = string.IsNullOrEmpty(primaryName) ? null : primaryName,
                 MatchKeys = string.IsNullOrEmpty(matchKey) ? new List<string>() : new List<string> { matchKey },
             };
+        }
+
+        /// <summary>template.json setting: name the error table's legacy ID column after the migrated
+        /// tables' most common legacy key instead of the template's own.</summary>
+        public const string ErrorKeyFromTables = "errorLegacyIdFromTables";
+
+        /// <summary>A true/false setting of template.json next to the .dtproj; false when absent.</summary>
+        internal static bool TemplateFlag(string directory, string name)
+        {
+            var path = Path.Combine(directory, TemplateHintName);
+            if (!File.Exists(path)) return false;
+            var data = Json.Parse(Metadata.ReadText(path)) as JObj;
+            return data != null && data.Get(name) is bool && (bool)data.Get(name);
         }
 
         private static List<XmlElement> PackageEntries(XmlDocument doc)

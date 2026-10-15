@@ -11,8 +11,8 @@
   DTS:LocaleID="1033"
   DTS:ObjectName="01b - Harness Code Tables"
   DTS:PackageType="5"
-  DTS:VersionBuild="334"
-  DTS:VersionGUID="{700F2F20-54E9-41C7-ACC6-DE5DDB3BE0C8}">
+  DTS:VersionBuild="335"
+  DTS:VersionGUID="{57DD0932-DC83-4693-AD2E-B476F9596C52}">
   <DTS:Property
     DTS:Name="PackageFormatVersion">8</DTS:Property>
   <DTS:ConnectionManagers>
@@ -1197,6 +1197,13 @@
                       cachedName="tablename"
                       externalMetadataColumnId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].ExternalColumns[tablename]"
                       lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[tablename]" />
+                    <inputColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].Columns[new_legacyid]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="new_legacyid"
+                      externalMetadataColumnId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].ExternalColumns[new_legacyid]"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[new_legacyid]" />
                   </inputColumns>
                   <externalMetadataColumns
                     isUsed="True">
@@ -1220,6 +1227,11 @@
                       dataType="wstr"
                       length="100"
                       name="tablename" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table.Inputs[OLE DB Destination Input].ExternalColumns[new_legacyid]"
+                      dataType="wstr"
+                      length="100"
+                      name="new_legacyid" />
                   </externalMetadataColumns>
                 </input>
               </inputs>
@@ -1340,6 +1352,13 @@
                       cachedName="tablename"
                       externalMetadataColumnId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[tablename]"
                       lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[tablename]" />
+                    <inputColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].Columns[new_legacyid]"
+                      cachedDataType="wstr"
+                      cachedLength="100"
+                      cachedName="new_legacyid"
+                      externalMetadataColumnId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[new_legacyid]"
+                      lineageId="Package\Migrate Category\OLE DB Source - Staging.Outputs[OLE DB Source Output].Columns[new_legacyid]" />
                   </inputColumns>
                   <externalMetadataColumns
                     isUsed="True">
@@ -1363,6 +1382,11 @@
                       dataType="wstr"
                       length="100"
                       name="tablename" />
+                    <externalMetadataColumn
+                      refId="Package\Migrate Category\OLE DB Destination - Error Table 1.Inputs[OLE DB Destination Input].ExternalColumns[new_legacyid]"
+                      dataType="wstr"
+                      length="100"
+                      name="new_legacyid" />
                   </externalMetadataColumns>
                 </input>
               </inputs>
@@ -2019,9 +2043,9 @@ where ModifiedOn = '01/01/1900'</property>
           Id="Package\Migrate Category\OLE DB Destination - Error Table 1"
           TopLeft="312,312.5" />
         <NodeLayout
-          Size="245,42"
-          Id="Package\Migrate Category\OLE DB Destination - GUID Table"
-          TopLeft="579,312.5" />
+          Size="204,42"
+          Id="Package\Migrate Category\OLE DB Source - Staging"
+          TopLeft="384.5,5.49999999999989" />
         <NodeLayout
           Size="258,42"
           Id="Package\Migrate Category\Dynamics CRM Destination - Update"
@@ -2031,103 +2055,9 @@ where ModifiedOn = '01/01/1900'</property>
           Id="Package\Migrate Category\Conditional Split"
           TopLeft="407,107.5" />
         <NodeLayout
-          Size="204,42"
-          Id="Package\Migrate Category\OLE DB Source - Staging"
-          TopLeft="384.5,5.49999999999989" />
-        <EdgeLayout
-          Id="Package\Migrate Category.Paths[Update]"
-          TopLeft="461.333333333333,149.5">
-          <EdgeLayout.Curve>
-            <mssgle:Curve
-              StartConnector="{assembly:Null}"
-              EndConnector="-292.833333333333,60"
-              Start="0,0"
-              End="-292.833333333333,52.5">
-              <mssgle:Curve.Segments>
-                <mssgle:SegmentCollection
-                  Capacity="5">
-                  <mssgle:LineSegment
-                    End="0,20.3586550435865" />
-                  <mssgle:CubicBezierSegment
-                    Point1="0,20.3586550435865"
-                    Point2="0,24.3586550435865"
-                    Point3="-4,24.3586550435865" />
-                  <mssgle:LineSegment
-                    End="-288.833333333333,24.3586550435865" />
-                  <mssgle:CubicBezierSegment
-                    Point1="-288.833333333333,24.3586550435865"
-                    Point2="-292.833333333333,24.3586550435865"
-                    Point3="-292.833333333333,28.3586550435865" />
-                  <mssgle:LineSegment
-                    End="-292.833333333333,52.5" />
-                </mssgle:SegmentCollection>
-              </mssgle:Curve.Segments>
-            </mssgle:Curve>
-          </EdgeLayout.Curve>
-          <EdgeLayout.Labels>
-            <mssgm:EdgeLabel
-              BoundingBox="-162.696959635417,29.3586550435865,32.5605859375,11.609375"
-              RelativePosition="Any" />
-          </EdgeLayout.Labels>
-        </EdgeLayout>
-        <EdgeLayout
-          Id="Package\Migrate Category.Paths[OLE DB Source Output]"
-          TopLeft="486.5,47.4999999999999">
-          <EdgeLayout.Curve>
-            <mssgle:Curve
-              StartConnector="{assembly:Null}"
-              EndConnector="0,60"
-              Start="0,0"
-              End="0,52.5">
-              <mssgle:Curve.Segments>
-                <mssgle:SegmentCollection
-                  Capacity="5">
-                  <mssgle:LineSegment
-                    End="0,52.5" />
-                </mssgle:SegmentCollection>
-              </mssgle:Curve.Segments>
-            </mssgle:Curve>
-          </EdgeLayout.Curve>
-          <EdgeLayout.Labels>
-            <EdgeLabelCollection />
-          </EdgeLayout.Labels>
-        </EdgeLayout>
-        <EdgeLayout
-          Id="Package\Migrate Category.Paths[Error Output1]"
-          TopLeft="168.5,251.5">
-          <EdgeLayout.Curve>
-            <mssgle:Curve
-              StartConnector="{assembly:Null}"
-              EndConnector="269,61"
-              Start="0,0"
-              End="269,53.5">
-              <mssgle:Curve.Segments>
-                <mssgle:SegmentCollection
-                  Capacity="5">
-                  <mssgle:LineSegment
-                    End="0,26.5" />
-                  <mssgle:CubicBezierSegment
-                    Point1="0,26.5"
-                    Point2="0,30.5"
-                    Point3="4,30.5" />
-                  <mssgle:LineSegment
-                    End="265,30.5" />
-                  <mssgle:CubicBezierSegment
-                    Point1="265,30.5"
-                    Point2="269,30.5"
-                    Point3="269,34.5" />
-                  <mssgle:LineSegment
-                    End="269,53.5" />
-                </mssgle:SegmentCollection>
-              </mssgle:Curve.Segments>
-            </mssgle:Curve>
-          </EdgeLayout.Curve>
-          <EdgeLayout.Labels>
-            <mssgm:EdgeLabel
-              BoundingBox="106.16361328125,35.5,56.6727734375,11.43359375"
-              RelativePosition="Any" />
-          </EdgeLayout.Labels>
-        </EdgeLayout>
+          Size="245,42"
+          Id="Package\Migrate Category\OLE DB Destination - GUID Table"
+          TopLeft="579,312.5" />
         <EdgeLayout
           Id="Package\Migrate Category.Paths[Error Output]"
           TopLeft="783.833333333333,250.5">
@@ -2222,6 +2152,100 @@ where ModifiedOn = '01/01/1900'</property>
               RelativePosition="Any" />
           </EdgeLayout.Labels>
         </EdgeLayout>
+        <EdgeLayout
+          Id="Package\Migrate Category.Paths[Update]"
+          TopLeft="461.333333333333,149.5">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="-292.833333333333,60"
+              Start="0,0"
+              End="-292.833333333333,52.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,20.3586550435865" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,20.3586550435865"
+                    Point2="0,24.3586550435865"
+                    Point3="-4,24.3586550435865" />
+                  <mssgle:LineSegment
+                    End="-288.833333333333,24.3586550435865" />
+                  <mssgle:CubicBezierSegment
+                    Point1="-288.833333333333,24.3586550435865"
+                    Point2="-292.833333333333,24.3586550435865"
+                    Point3="-292.833333333333,28.3586550435865" />
+                  <mssgle:LineSegment
+                    End="-292.833333333333,52.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <mssgm:EdgeLabel
+              BoundingBox="-162.696959635417,29.3586550435865,32.5605859375,11.609375"
+              RelativePosition="Any" />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package\Migrate Category.Paths[OLE DB Source Output]"
+          TopLeft="486.5,47.4999999999999">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="0,60"
+              Start="0,0"
+              End="0,52.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,52.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <EdgeLabelCollection />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
+        <EdgeLayout
+          Id="Package\Migrate Category.Paths[Error Output1]"
+          TopLeft="168.5,251.5">
+          <EdgeLayout.Curve>
+            <mssgle:Curve
+              StartConnector="{assembly:Null}"
+              EndConnector="269,61"
+              Start="0,0"
+              End="269,53.5">
+              <mssgle:Curve.Segments>
+                <mssgle:SegmentCollection
+                  Capacity="5">
+                  <mssgle:LineSegment
+                    End="0,26.5" />
+                  <mssgle:CubicBezierSegment
+                    Point1="0,26.5"
+                    Point2="0,30.5"
+                    Point3="4,30.5" />
+                  <mssgle:LineSegment
+                    End="265,30.5" />
+                  <mssgle:CubicBezierSegment
+                    Point1="265,30.5"
+                    Point2="269,30.5"
+                    Point3="269,34.5" />
+                  <mssgle:LineSegment
+                    End="269,53.5" />
+                </mssgle:SegmentCollection>
+              </mssgle:Curve.Segments>
+            </mssgle:Curve>
+          </EdgeLayout.Curve>
+          <EdgeLayout.Labels>
+            <mssgm:EdgeLabel
+              BoundingBox="106.16361328125,35.5,56.6727734375,11.43359375"
+              RelativePosition="Any" />
+          </EdgeLayout.Labels>
+        </EdgeLayout>
       </GraphLayout>
     </LayoutInfo>
   </TaskHost>
@@ -2252,7 +2276,7 @@ where ModifiedOn = '01/01/1900'</property>
     </Properties>
   </PipelineComponentMetadata>
   <PipelineComponentMetadata
-    design-time-name="Package\Migrate Category\OLE DB Destination - GUID Table">
+    design-time-name="Package\Migrate Category\OLE DB Source - Staging">
     <Properties>
       <Property>
         <Name>DataSourceViewID</Name>
@@ -2265,7 +2289,7 @@ where ModifiedOn = '01/01/1900'</property>
     </Properties>
   </PipelineComponentMetadata>
   <PipelineComponentMetadata
-    design-time-name="Package\Migrate Category\OLE DB Source - Staging">
+    design-time-name="Package\Migrate Category\OLE DB Destination - GUID Table">
     <Properties>
       <Property>
         <Name>DataSourceViewID</Name>

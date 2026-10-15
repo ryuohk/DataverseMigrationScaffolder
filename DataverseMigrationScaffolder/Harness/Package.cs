@@ -245,7 +245,7 @@ namespace DataverseMigrationScaffolder.HarnessGen
                 }
             }
             Apply(root, subst.Apply, generated);
-            KeepErrorTableColumns(doc, columnNames);
+            KeepErrorTableColumns(doc, columnNames, reference, target);
             var warnings = RetargetDestinationMetadata(doc, target);
 
             ValidateReferences(root, templateLabel);
@@ -289,19 +289,27 @@ namespace DataverseMigrationScaffolder.HarnessGen
         /// Every table writes to the one shared error table, so its columns keep the reference's
         /// names: when the reference logs a column that is renamed for the target (such as the legacy
         /// match key, contoso_legacyid for one table and fabrikam_legacyid for another), the target's
-        /// column is written to the error table column under the reference's name.
+        /// column is written to the error table column under the reference's name. The legacy ID's
+        /// column can have its own name instead (Table.ErrorKeyColumn).
         /// </summary>
-        private static void KeepErrorTableColumns(XmlDocument doc, OrderedMap columnNames)
+        private static void KeepErrorTableColumns(XmlDocument doc, OrderedMap columnNames, Table reference, Table target)
         {
-            var renamed = columnNames.Where(p => p.Key != p.Value).ToList();
+            // (name in the target's flow, name in the error table)
+            var renamed = columnNames.Where(p => p.Key != p.Value).Select(p => new KeyValuePair<string, string>(p.Value, p.Key)).ToList();
+            if (!string.IsNullOrEmpty(reference.ErrorKeyColumn) && reference.MatchKeys.Count > 0 && target.MatchKeys.Count > 0)
+            {
+                renamed.RemoveAll(p => p.Key == target.MatchKeys[0]);
+                if (target.MatchKeys[0] != reference.ErrorKeyColumn)
+                    renamed.Add(new KeyValuePair<string, string>(target.MatchKeys[0], reference.ErrorKeyColumn));
+            }
             if (renamed.Count == 0) return;
             foreach (var component in Xml.ByTag(doc, "component").Where(Harness.IsErrorDestination))
                 foreach (var pair in renamed)
                 {
-                    string targetId = "ExternalColumns[" + pair.Value + "]", referenceId = "ExternalColumns[" + pair.Key + "]";
-                    foreach (var ext in Xml.ByTag(component, "externalMetadataColumn").Where(e => e.GetAttribute("name") == pair.Value))
+                    string targetId = "ExternalColumns[" + pair.Key + "]", referenceId = "ExternalColumns[" + pair.Value + "]";
+                    foreach (var ext in Xml.ByTag(component, "externalMetadataColumn").Where(e => e.GetAttribute("name") == pair.Key))
                     {
-                        ext.SetAttribute("name", pair.Key);
+                        ext.SetAttribute("name", pair.Value);
                         ext.SetAttribute("refId", ext.GetAttribute("refId").Replace(targetId, referenceId));
                     }
                     foreach (var input in Xml.ByTag(component, "inputColumn"))

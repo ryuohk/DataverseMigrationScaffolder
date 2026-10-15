@@ -52,6 +52,9 @@ namespace DataverseMigrationScaffolder.HarnessGen
         public string PrimaryId;
         public string PrimaryName;
         public List<string> MatchKeys = new List<string>();
+        /// <summary>For the reference table: the error table's column for the legacy ID when it is not
+        /// named like MatchKeys[0] (the built-in template names it after the migrated tables' key).</summary>
+        public string ErrorKeyColumn;
         public List<Column> Columns = new List<Column>();
         /// <summary>In-scope lookup targets; dropped ones are cycle edges resolved by a deferred pass.</summary>
         public List<string> Dependencies = new List<string>();
