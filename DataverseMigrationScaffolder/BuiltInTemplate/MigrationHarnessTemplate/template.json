@@ -1,5 +1,6 @@
 {
   "table": "new_category",
   "primaryName": "new_category",
-  "matchKey": "new_legacyid"
+  "matchKey": "new_legacyid",
+  "errorLegacyIdFromTables": true
 }

@@ -252,7 +252,7 @@ namespace DataverseMigrationScaffolder.HarnessGen
 
         /// <summary>CREATE TABLE for the error table the reference flow writes to, from the columns its
         /// error destination declares; null if the reference has no error destination.</summary>
-        private static bool IsErrorDestination(XmlElement component)
+        internal static bool IsErrorDestination(XmlElement component)
         {
             var props = Xml.Props(component);
             if (!props.Has("OpenRowset")) return false;
@@ -270,8 +270,11 @@ namespace DataverseMigrationScaffolder.HarnessGen
                 .Where(read.Contains), StringComparer.Ordinal);
         }
 
-        public static string ErrorTableSql(byte[] templateXml)
+        public static string ErrorTableSql(byte[] templateXml, Table reference = null)
         {
+            // The legacy ID's column can be named after the migrated tables' key (Table.ErrorKeyColumn).
+            var keyRename = reference != null && !string.IsNullOrEmpty(reference.ErrorKeyColumn) && reference.MatchKeys.Count > 0
+                ? new KeyValuePair<string, string>(reference.MatchKeys[0], reference.ErrorKeyColumn) : (KeyValuePair<string, string>?)null;
             var doc = Xml.Parse(templateXml);
             foreach (var component in Xml.ByTag(doc, "component"))
             {
@@ -281,6 +284,7 @@ namespace DataverseMigrationScaffolder.HarnessGen
                 foreach (var ext in Xml.ByTag(component, "externalMetadataColumn"))
                 {
                     var name = ext.GetAttribute("name");
+                    if (keyRename.HasValue && name == keyRename.Value.Key) name = keyRename.Value.Value;
                     var kind = ext.GetAttribute("dataType");
                     var length = ext.GetAttribute("length");
                     var scale = ext.GetAttribute("scale");

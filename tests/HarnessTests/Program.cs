@@ -57,7 +57,7 @@ internal static class Program
                         Normalize(output);
                         if (update && !inMemory)
                         {
-                            if (Directory.Exists(expected)) Directory.Delete(expected, true);
+                            EmptyFolder(expected);
                             CopyFolder(output, expected);
                         }
                         problem = Compare(expected, output);
@@ -192,7 +192,17 @@ internal static class Program
         {
             var dest = Path.Combine(target, file.Substring(source.Length + 1));
             Directory.CreateDirectory(Path.GetDirectoryName(dest));
-            File.Copy(file, dest);
+            File.Copy(file, dest, true);
         }
+    }
+
+    /// <summary>Delete a folder's files and whatever subfolders can go. Synced folders (OneDrive)
+    /// can refuse to delete a folder, but not the files in it.</summary>
+    private static void EmptyFolder(string folder)
+    {
+        if (!Directory.Exists(folder)) return;
+        foreach (var file in Directory.GetFiles(folder, "*", SearchOption.AllDirectories)) File.Delete(file);
+        foreach (var dir in Directory.GetDirectories(folder, "*", SearchOption.AllDirectories).OrderByDescending(d => d.Length))
+            try { Directory.Delete(dir); } catch (IOException) { }
     }
 }

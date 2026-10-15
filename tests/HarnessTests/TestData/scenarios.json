@@ -117,6 +117,24 @@
     ]
   },
   {
+    "name": "error-legacy-id",
+    "args": [
+      "--manifest",
+      "Fixtures/scaffolder-errorlegacy/manifest.json",
+      "--reference-dtproj",
+      "Fixtures/reference-errorlegacy/ReferenceHarness.dtproj"
+    ]
+  },
+  {
+    "name": "builtin-mixed-keys",
+    "args": [
+      "--manifest",
+      "Fixtures/scaffolder-errorlegacy/manifest.json",
+      "--reference-dtproj",
+      "Fixtures/builtin/MigrationHarnessTemplate/MigrationHarnessTemplate.dtproj"
+    ]
+  },
+  {
     "name": "error-guid-columns",
     "args": [
       "--manifest",

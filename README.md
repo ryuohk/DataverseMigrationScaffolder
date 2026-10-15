@@ -292,6 +292,18 @@ update branch that updates the GUID table by `SavedRecordId` is also accepted.) 
 holds a `Stage Category` Execute SQL task that runs `Queries\stage_new_Category.sql`; it is the
 template for every table's Stage task and SQL.
 
+The error table (`[dbo].[Error]`) is created with the columns the reference's error destinations
+declare, and every table's create and update error outputs write the same columns. To log a
+staging column with each error, such as `tablename` or the legacy ID, map it in the reference's
+error destinations. A column that is named differently in each table, like the legacy ID
+(`new_legacyid` in one table, `abc_legacyid` in another), keeps the reference's name in the
+error table, and each table writes its own column into it.
+
+The built-in template logs each error's `tablename` and legacy ID. Its error table names the
+legacy ID column after your tables' own legacy key (the most common one, such as `abc_legacyid`)
+rather than the template's sample `new_legacyid`; `"errorLegacyIdFromTables": true` in its
+`template.json` turns this on.
+
 Generated layout per scaffolder file group:
 - `NNa - Staging`: Create Staging Tables, then one `Stage <Table>` task per table, loading
   staging from the legacy database with the SQL in the output's `Queries` folder (lookups
